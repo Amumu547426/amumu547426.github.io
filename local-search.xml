@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>自底向上分析法</title>
+    <link href="/amumu547426.github.io/2020/06/14/BottomUpG/"/>
+    <url>/amumu547426.github.io/2020/06/14/BottomUpG/</url>
+    
+    <content type="html"><![CDATA[<h2 id="自底向上语法分析技术"><a href="#自底向上语法分析技术" class="headerlink" title="自底向上语法分析技术"></a>自底向上语法分析技术</h2><p>思想：从分析树的底部向顶部方向构造分析树，是将输入串w归约为文法开始符号S的过程。自顶向下语法分析采用最左推导方式，而自底向上的语法分析采用最左归约方式（规范归约）。</p><h3 id="句柄"><a href="#句柄" class="headerlink" title="句柄"></a>句柄</h3><div class="note note-primary">            <p>短语：若S=&gt;*αAβ并且A=&gt;+γ，则称γ是句型αγβ的相对于变量A的短语<br>直接短语：若S=&gt;*αAβ并且A=&gt;γ，则称γ是句型αγβ的相对于变量A的直接短语<br>句柄：若S=&gt;*αAw=&gt;αβw，则称β是句型αβw相对于A→β的直接短语，一个句型的最左直接短语称为该句型的句柄</p>          </div><p>在一个最右句型中，句柄右边只有终结符号，若文法无二义性，那么每个句型都有且只有一个句柄。</p><p>句型的句柄与一个产生式右部相匹配，将句柄归约为该产生式左部非终结符号代表了最右推导中的逆过程的一步。</p><h3 id="规范归约"><a href="#规范归约" class="headerlink" title="规范归约"></a>规范归约</h3><p>设α为文法G的句子，若</p><ul><li>α=α$<em>n$&lt;=α$</em>{n-1}$&lt;=……&lt;=α$_2$&lt;=α$_1$=S</li><li>对每个i(1≤i≤n)，α$_{i-1}$是将句型α$_i$中的句柄归约后得到的句型</li><li>则称α$_n$，……，α$_1$为α的规范归约序列</li></ul><h3 id="移入-归约分析"><a href="#移入-归约分析" class="headerlink" title="移入-归约分析"></a>移入-归约分析</h3><p>使用一个栈来保存归约/扫描移入的文法符号，栈中符号（自底向上）和待扫描的符号组成了一个最右句型。</p><ul><li>移入：将下一个输入符号移动到栈顶</li><li>归约：将句柄归约为相应的非终结符号，句柄总是在栈顶。具体操作时弹出句柄，压入被归约到的非终结符号。</li><li>接受：宣布分析过程成功完成</li><li>报错：发现语法错误，调用错误恢复子程序</li></ul><h4 id="移入-归约中的存在的问题举例："><a href="#移入-归约中的存在的问题举例：" class="headerlink" title="移入-归约中的存在的问题举例："></a>移入-归约中的存在的问题举例：</h4><p>对于如下文法：</p><p>（1）&lt;S&gt;→var&lt;IDS&gt;:&lt;T&gt;                                                                                      </p><p>（2）&lt;IDS&gt;→i</p><p>（3）&lt;IDS;T&gt;→&lt;IDS&gt;,i</p><p>（4）&lt;T&gt;→real | int</p><table><thead><tr><th></th><th>栈</th><th align="left">剩余输入</th><th>动作</th></tr></thead><tbody><tr><td>1</td><td>&#36;</td><td align="left">var <h>i<sub>A</sub></h> , <h>i<sub>B</sub></h> : real &#36;</td><td></td></tr><tr><td>2</td><td>&#36;var</td><td align="left"><h>i<sub>A</sub></h> , <h>i<sub>B</sub></h> : real &#36;</td><td>移入</td></tr><tr><td>3</td><td>&#36;var <h>i<sub>A</sub></h></td><td align="left">, <h>i<sub>B</sub></h> : real &#36;</td><td>移入</td></tr><tr><td>4</td><td>&#36;var &lt;IDS&gt;</td><td align="left">, <h>i<sub>B</sub></h> : real &#36;</td><td>按（2）归约</td></tr><tr><td>5</td><td>&#36;var &lt;IDS&gt;,</td><td align="left"><h>i<sub>B</sub></h> : real &#36;</td><td>移入</td></tr><tr><td>6</td><td>&#36;var &lt;IDS&gt;,<h>i<sub>B</sub></h></td><td align="left">: real &#36;</td><td>移入</td></tr><tr><td>7</td><td>&#36;var &lt;IDS&gt;,&lt;IDS&gt;</td><td align="left">: real &#36;</td><td>按（2）归约</td></tr><tr><td>8</td><td>&#36;var &lt;IDS&gt;,&lt;IDS&gt;:</td><td align="left">real &#36;</td><td>移入</td></tr><tr><td>9</td><td>&#36;var &lt;IDS&gt;,&lt;IDS&gt;:real</td><td align="left">real &#36;</td><td>移入</td></tr><tr><td>10</td><td>&#36;var &lt;IDS&gt;,&lt;IDS&gt;:&lt;T&gt;</td><td align="left">&#36;</td><td>按（4）归约，报错</td></tr></tbody></table><p>识别的句子显然是属于该文法的，然而分析过程中却报错，是因为在第6步移入的终结符号$i_B$并不是一个句柄，而在第7步对一个错误的句柄进行了归约。</p><p><img src="pic1.png" srcset="/amumu547426.github.io/img/loading.gif" alt=""></p><p>对于每个句型，都能构造该句型的分析树，上图为第六步的分析树，下面给出关于分析树的一些定义：</p><div class="note note-secondary">            <p>根节点：文法的开始符号<br>边缘：分析树的边缘为从左到右排列叶节点得到的符号串<br>短语：分析树中每棵子树的边缘称为该句型的一个短语<br>直接短语：若子树只有父子两代结点（高度为2），则该子树的边缘称为该句型的一个直接短语</p>          </div><p>句柄是句型的最左直接短语，它是分析树中某棵高度为2的子树的边缘，在上图所示的对应于第6步的分析树中，$i_B$不是某棵高度为2的子树的边缘。当前句型有两个直接短语：   </p><ul><li>一是以&lt;IDS&gt;为根节点的高度为2的子树的边缘&lt;IDS&gt;,$i_B$</li><li>二是以&lt;T&gt;为根节点的高度为2的子树的边缘real</li></ul><p>最左直接短语即&lt;IDS&gt;,$i_B$为句柄，因此正确做法是将&lt;IDS&gt;,$i_B$归约为&lt;IDS&gt;。</p><h4 id="确定句柄的两种方法"><a href="#确定句柄的两种方法" class="headerlink" title="确定句柄的两种方法"></a>确定句柄的两种方法</h4><ul><li>优先法：根据归约先后次序为句型中相邻文法符号规定优先关系（本文不讨论）</li><li>状态法：根据句柄的识别状态确定句柄，下文的LR分析法即采用状态法</li></ul><h3 id="LR分析法"><a href="#LR分析法" class="headerlink" title="LR分析法"></a>LR分析法</h3><p>LR文法是最大的，可以构造出响应移入-归约语法分析器的文法类。</p><ul><li>L：对输入进行从左至右扫描</li><li>R：反向构造出一个最右推导序列</li></ul><p>LR(k)分析：</p><ul><li>需要向前查看k个输入符号的LR分析（k=0,1具有实践意义）</li></ul><h4 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h4><p>句柄是逐步形成的，用状态表示句柄识别的进展程度。例：对于S→bBB：</p><ul><li>S→·bBB    移进状态</li><li>S→b·BB    待约状态</li><li>S→bB·B    待约状态</li><li>S→bBB·    归约状态</li></ul><p>LR分析器基于这样一些状态来构造自动机进行句柄识别。</p><h4 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h4><ul><li>LR语法分析器由表格驱动；虽然手工构造表格工作量大，但表格可以自动生成</li><li>对于几乎所有的程序设计语言，只要写出上下文无关文法，就能够构造出识别该构造的LR语法分析器</li><li>最通用的无回溯移入归约分析技术，且和其它技术一样高效</li><li>可以尽早检测到错误</li><li>能分析的文法集合是LL(k)文法的超集，例如上下文无关文法就是正则文法的超集</li></ul><h3 id="分析器总体结构"><a href="#分析器总体结构" class="headerlink" title="分析器总体结构"></a>分析器总体结构</h3><p><img src="pic2.png" srcset="/amumu547426.github.io/img/loading.gif" alt=""></p><h3 id="LR-0-分析"><a href="#LR-0-分析" class="headerlink" title="LR(0)分析"></a>LR(0)分析</h3><h4 id="LR-0-项和LR-0-自动机"><a href="#LR-0-项和LR-0-自动机" class="headerlink" title="LR(0)项和LR(0)自动机"></a>LR(0)项和LR(0)自动机</h4><p>LR语法分析器的栈中元素包含状态，状态指明了在移入归约分析中的位置。状态是项的集合。</p><p>LR(0)项：</p><ul><li>文法的产生式加上在产生式体某处的一个点，例A→·XYZ，A→X·YZ，A→XY·Z，A→XYZ·</li><li>A→ε只有一个项A→·</li></ul><h4 id="规范LR-0-项集族"><a href="#规范LR-0-项集族" class="headerlink" title="规范LR(0)项集族"></a>规范LR(0)项集族</h4><p>规范LR(0)项集族的项集可作为LR(0)自动机的状态，并以此为基础构造自动机的基础。</p><p>LR(0)语法分析过程：</p><ul><li>状态存放在栈中</li><li>栈中的状态（自底向上）形成自动机的一条路径，路径上的标号就是栈中的文法符号序列</li><li>若到达接受状态，则栈顶某个符号串形成句柄  </li></ul><h5 id="规范LR-0-项集族的构造"><a href="#规范LR-0-项集族的构造" class="headerlink" title="规范LR(0)项集族的构造"></a>规范LR(0)项集族的构造</h5><p>增广文法：G的增广文法G’是在G中增加新的开始符号S’，并加入产生式S’→S得到的。</p><p>用到的子函数：</p><ul><li>CLOSURE(I)：I的项集闭包</li><li>GOTO(I,X)：I的X后继</li></ul><div class="note note-success">            <p>CLOSURE(I)构造算法：</p><ul><li>首先将I中的各个项加入到CLOSURE(I)中</li><li>如果A→α·Bβ在CLOSURE(I)中，那么对B的任意产生式B→γ，将B→·γ加到CLOSURE(I)中</li><li>不断重复第二步，直到收敛</li></ul><p>例：增广文法：</p><ul><li>E‘→E</li><li>E→E+T | T</li><li>T→T*F | F</li><li>F→（E) | id</li></ul><p>项集{[E‘→E]}的闭包：</p><ul><li>[E‘→·E]</li><li>[E→·E+T]，[E→·T]</li><li>[T→·T*F]，[T→·F]</li><li>[F→·(E)]，[F→·id]</li></ul>          </div><div class="note note-info">            <p>GOTO函数：</p><ul><li>GOTO(I,X)：I中形如[A→α·Xβ]的项对应的项[A→αX·β]的闭包，定义了LR(0)自动机中状态I在X之上的转换</li><li>例：I={[E’→E·],[E→E·+T]}，则GOTO(I,+)：<ul><li>I中第二项·后出现+，对应项为[E→E·+T]</li><li>GOTO(I,+)=CLOSURE({[E→E+·T]})={ [E→E+·T], [T→·T*F], [T→·F], [F→·(E)], [F→·id] }</li></ul></li></ul>          </div><div class="note note-secondary">            <p>求增广文法G’的LR(0)项集规范族算法：</p><pre><code class="hljs 伪码">void items(G&#39;)&#123;C &#x3D; CLOSURE(&#123;[S&#39;→·S]&#125;);repeatfor (C中的每个项集I)for (，每个文法符号X)if (GOTO(I,X)非空且不在C中)将GOTO(I,X)加入C中；until 没有新的项集加入到C&#125;</code></pre>          </div><p>对于上例中的增广文法，求出各个规范集族为：</p><p><img src="pic3.png" srcset="/amumu547426.github.io/img/loading.gif" alt=""></p><h4 id="如何使用LR-0-自动机"><a href="#如何使用LR-0-自动机" class="headerlink" title="如何使用LR(0)自动机"></a>如何使用LR(0)自动机</h4><p>假设文法符号串γ是LR(0)自动机从开始状态运行到状态j路径上的输入符号的串，那么</p><ul><li>若下个输入符号为a，且j状态有一个a上的转换，则移入a</li><li>若j中有形如A→a·的项，则按A→a归约</li><li>若有多种可能，即存在冲突</li></ul><p>LR语法分析表的结构有两部分，动作ACTION和转换GOTO，ACTION(i,a)其中i为状态，a为终结符，表示状态i遇到终结符a应采取的动作；GOTO(i,A)其实i为状态，A为非终结符，表示i遇到归约出的A应进入的状态。下面给出构造LR(0)分析表的算法：</p><div class="note note-info">            <p>为表区分，构造规范LR(0)项集族的GOTO函数在这里用GO表示</p><p>sj表示移入终结符号，进入状态j；rj表示按第j个产生式归约</p>          </div><div class="note note-success">            <ul><li>0为开始状态</li><li>对<h>I<sub>i</sub></h>∈C：<ul><li>if A→α·aβ∈<h>I<sub>i</sub></h> and GO(<h>I<sub>i</sub></h>,a)=<h>I<sub>j</sub></h> then ACTION[i,a] = sj</li><li>if A→α·Bβ∈<h>I<sub>i</sub></h> and GO(<h>I<sub>i</sub></h>,B)=<h>I<sub>j</sub></h> then GOTO[i,B] = j</li><li>if A→α·属于<h>I<sub>i</sub></h>  then<ul><li>for ∀a∈T∪{$} do<ul><li>ACTION[i,a] = rj</li></ul></li></ul></li><li>if S’→S·∈<h>I<sub>i</sub></h> then ACTION[i,$] = acc</li></ul></li><li>空格处为error</li></ul>          </div><h5 id="LR语法分析算法"><a href="#LR语法分析算法" class="headerlink" title="LR语法分析算法"></a>LR语法分析算法</h5><div class="note note-info">            <p>输入：文法G的LR语法分析表，输入串w</p><p>输出：若w在L(G)中，输出最左归约步骤，否则输出错误提示</p><pre><code class="hljs 伪码">令a为w$的第一个符号while(true)&#123;令s为栈顶状态;if(ACTION[s,a] &#x3D; 移入t)&#123;        将t压入栈中；        令a为下一个输入符号&#125;else if(ACTION[s,a] &#x3D; 规约A→β)&#123;从栈中弹出|β|个符号;令t为当前栈顶状态;将GOTO[t,A]压入栈中;输出产生式A→β&#125;else if(ACTION[s,a] &#x3D; acc) break;else 调用错误恢复例程;&#125;</code></pre>          </div><p>用以下例子说明分析过程，分析id*id：</p><table><thead><tr><th></th><th>栈</th><th>符号</th><th align="left">输入</th><th align="left">动作</th></tr></thead><tbody><tr><td>1</td><td>0</td><td>$</td><td align="left">id*id$</td><td align="left">移入id，进入5</td></tr><tr><td>2</td><td>0 5</td><td>$id</td><td align="left">*id$</td><td align="left">按F→id归约，5出栈，0遇到F进入3</td></tr><tr><td>3</td><td>0 3</td><td>$F</td><td align="left">*id$</td><td align="left">按T→F归约，3出栈，0遇到T进入2</td></tr><tr><td>4</td><td>0 2</td><td>$T</td><td align="left">*id$</td><td align="left">移入*，进入7</td></tr><tr><td>5</td><td>0 2 7</td><td>$T*</td><td align="left">id$</td><td align="left">移入id，进入5</td></tr><tr><td>6</td><td>0 2 7 5</td><td>$T*id</td><td align="left">$</td><td align="left">按F→id归约，5出栈，7遇到F进入10</td></tr><tr><td>7</td><td>0 2 7 10</td><td>$T*F</td><td align="left">$</td><td align="left">按T→T*F归约，10，7，2出栈，0遇到T进入2</td></tr><tr><td>8</td><td>0 2</td><td>$T</td><td align="left">$</td><td align="left">按E→T归约，2出栈。0遇到E进入1</td></tr><tr><td>9</td><td>0 1</td><td>$E</td><td align="left">$</td><td align="left">接受</td></tr></tbody></table><h4 id="LR-0-分析过程中的冲突"><a href="#LR-0-分析过程中的冲突" class="headerlink" title="LR(0)分析过程中的冲突"></a>LR(0)分析过程中的冲突</h4><p>对于该部分采用的增广文法的例子，观察其LR(0)自动机状态转换图可以发现，在<h>I<sub>2</sub></h>和<h>I<sub>9</sub></h>中在下一个输入符号为*的情况下，不知道是该采取归约动作还是移入动作  。若LR(0)分析表中没有语法分析动作的冲入，则称其为LR(0)文法。不是所有的CFG都能用LR(0)方法分析。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>编译原理</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>语法分析</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>自顶向下分析-LL(1)文法</title>
+    <link href="/amumu547426.github.io/2020/06/13/TopDownG/"/>
+    <url>/amumu547426.github.io/2020/06/13/TopDownG/</url>
+    
+    <content type="html"><![CDATA[<h3 id="LL-1-文法"><a href="#LL-1-文法" class="headerlink" title="LL(1)文法"></a>LL(1)文法</h3><h4 id="自顶向下分析法希望文法满足的条件"><a href="#自顶向下分析法希望文法满足的条件" class="headerlink" title="自顶向下分析法希望文法满足的条件"></a>自顶向下分析法希望文法满足的条件</h4><p>从左至右扫描输入串，寻找它的一个最左推导；对于G的每个非终结符A，若A有多个不同的候选式时，在选择产生某个终结符号时能唯一选定一个。给定文法S→cAd，A→ab|a，A的候选式ab和a具有相同首部终结符号，LL(1)文法希望避免这种文法。</p><h4 id="串首终结符集-FIRST集"><a href="#串首终结符集-FIRST集" class="headerlink" title="串首终结符集-FIRST集"></a>串首终结符集-FIRST集</h4><p>FIRST(α)即关于α的所有产生式右部第一个遇到终结符。FIRST(α)={a|α=*&gt;a…,a∈$V_t$*}</p><p>求FIRST集的算法</p><ul><li>令α=$X_1$…$X_n$</li><li>初值：<ul><li>FIRST(α)=FIRST($X_1$)-{ε}</li><li>k=1</li></ul></li><li>循环<ul><li>while ε∈FIRST($X_k$) &amp;&amp; k&lt;n  do<ul><li>FIRST(α)=FIRST(α)∪(FIRST($X_{k+1}$)-{ε}) </li><li>k = k+1</li></ul></li></ul></li><li>结束<ul><li>if k==n &amp;&amp; ε∈FIRST($X_k$) then FIRST(α)=FIRST(α)∪{ε}</li></ul></li></ul><h4 id="非终结符后继符号集-FOLLOW集"><a href="#非终结符后继符号集-FOLLOW集" class="headerlink" title="非终结符后继符号集-FOLLOW集"></a>非终结符后继符号集-FOLLOW集</h4><p>FOLLOW(A)即非终结符A的后续符号集。FOLLOW(A)={a|S=<em>&gt;…Aa…,a∈$V_t$\</em>}</p><p>求FOLLOW集的算法</p><ul><li>若B→αAaβ，a是终结符，则把a放入FOLLOW(A)中</li><li>若B→αAXβ，X是非终结符，则把FIRST(Xβ)放入FOLLOW(A)中</li><li>若B→αA或B→αAβ，但β=&gt;ε，则把FOLLOW(B)放入FOLLOW(A)中</li><li>若S是开始符，则$∈FOLLOW(S)</li><li>若A→αBβ，则FIRST(β)中除了ε之外所有符号均在FOLLOW(B)中</li><li>若A→αB或A→αBβ，且FIRST(β)包含ε，则FOLLOW(A)所有符号均在FOLLOW(B)中</li></ul><h4 id="产生式可选集-SELECT集"><a href="#产生式可选集-SELECT集" class="headerlink" title="产生式可选集-SELECT集"></a>产生式可选集-SELECT集</h4><ul><li>产生式A→β的可选集是指可以选用该产生式进行推导时对应的输入符号集合，记为SELECT(A→β)<ul><li>SELECT(A→αβ)={α}</li><li>SELECT(A→ε)=FOLLOW(A)</li></ul></li></ul><h4 id="LL-1-文法-1"><a href="#LL-1-文法-1" class="headerlink" title="LL(1)文法"></a>LL(1)文法</h4><p>对G中任意变量A，A→$a_1$|$a_2$|…|$a_n$是A的所有产生式，若他们满足</p><ul><li>FIRST($a_i$)∩FIRST($a_j$) =Φ       i≠ j</li><li>当ε∈FIRST($a_j$)时，FOLLOW(A)∩FIRST($a_j$)=Φ</li></ul><p>则称G为LL(1)文法。</p><h4 id="LL-1-文法分析原理"><a href="#LL-1-文法分析原理" class="headerlink" title="LL(1)文法分析原理"></a>LL(1)文法分析原理</h4><p><img src="im1.png" srcset="/amumu547426.github.io/img/loading.gif" alt=""></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>编译原理</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>语法分析</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>c--交换排序</title>
+    <link href="/amumu547426.github.io/2020/06/10/Exchange/"/>
+    <url>/amumu547426.github.io/2020/06/10/Exchange/</url>
+    
+    <content type="html"><![CDATA[<h3 id="冒泡排序"><a href="#冒泡排序" class="headerlink" title="冒泡排序"></a>冒泡排序</h3><p>从后往前或从前往后依次比较相邻元素值，并按从小到大或从大到小交换，每趟固定一个关键字的位置。</p><p>最坏情况下时间复杂度$O(n^2)$，平均时间复杂度$O(n^2)$，空间复杂度$O(1)$，稳定。</p><p>排序趟数，交换次数与待排序序列有关系，当某一趟没有发生交换时，认为已经有序。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">BubbleSort</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> n)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">int</span> i,j,flag;    <span class="hljs-keyword">for</span>(i=<span class="hljs-number">0</span>; i&lt;n<span class="hljs-number">-1</span>; i++)    &#123;        flag = <span class="hljs-number">0</span>;        <span class="hljs-keyword">for</span>(j=n<span class="hljs-number">-1</span>; j&gt;i; j--)        &#123;            <span class="hljs-keyword">if</span>(A[j] &lt; A[j<span class="hljs-number">-1</span>])            &#123;                <span class="hljs-keyword">int</span> temp = A[j];                A[j] = A[j<span class="hljs-number">-1</span>];                A[j<span class="hljs-number">-1</span>] = temp;                flag = <span class="hljs-number">1</span>;            &#125;        &#125;        <span class="hljs-keyword">if</span>(flag == <span class="hljs-number">0</span>)        &#123;            <span class="hljs-keyword">return</span>;        &#125;    &#125;&#125;</code></pre><h3 id="快速排序"><a href="#快速排序" class="headerlink" title="快速排序"></a>快速排序</h3><p>快速排序思想是基于分治法，每一次在待排序元素中选出一个基准（一般是序列首元素），以此为基准将序列分为两部分，左侧均小于基准，右侧均大于基准，再对左右两侧进行快速排序。</p><p>快速排序是递归的，递归深度平均情况为$O(nlog_2n)$，最坏为$O(n)$，时间复杂度为$O(nlog_2n)$，最坏为$O(n^2)$，平均情况下与最佳情况运行时间接近。快速排序是不稳定的。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">Partition</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> low, <span class="hljs-keyword">int</span> high)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-comment">/*</span><span class="hljs-comment">    分块函数，以A[low]作为标准，将元素按大小关系放在A[low]的两侧，分块完成后，A[i]&lt;A[low]&lt;=A[j] 其中i&lt;low，j&gt;low </span><span class="hljs-comment">    */</span>    <span class="hljs-keyword">int</span> pivot = A[low];    <span class="hljs-keyword">while</span>(low &lt; high)    &#123;        <span class="hljs-keyword">while</span>(low&lt;high &amp;&amp; A[high]&gt;=pivot)            high--;        A[low] = A[high];        <span class="hljs-keyword">while</span>(low&lt;high &amp;&amp; A[low]&lt;=pivot)            low++;        A[high] = A[low];    &#125;    A[low] = pivot;    <span class="hljs-keyword">return</span> low;&#125;<span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">QuickSort</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> low, <span class="hljs-keyword">int</span> high)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">if</span>(low &lt; high)    &#123;        <span class="hljs-keyword">int</span> pivotpos = Partition(A, low, high);        QuickSort(A, low, pivotpos<span class="hljs-number">-1</span>);        QuickSort(A, pivotpos+<span class="hljs-number">1</span>, high);    &#125;&#125;</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>学习</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>C</tag>
+      
+      <tag>数据结构</tag>
+      
+      <tag>算法</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>c--选择排序</title>
+    <link href="/amumu547426.github.io/2020/06/10/SelectSort/"/>
+    <url>/amumu547426.github.io/2020/06/10/SelectSort/</url>
+    
+    <content type="html"><![CDATA[<h3 id="简单选择排序"><a href="#简单选择排序" class="headerlink" title="简单选择排序"></a>简单选择排序</h3><p>执行n-1趟，每趟从剩余的未排序序列中选取最小元素，交换到正确位置。</p><p>时间复杂度$O(n^2)$，不稳定，关键字比较次数与待排序序列元素无关，总是要比较$O(n^2)$次。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SelectSort</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> n)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">int</span> i,j;    <span class="hljs-keyword">for</span>(i=<span class="hljs-number">0</span>; i&lt;n<span class="hljs-number">-1</span>; i++)    &#123;        <span class="hljs-keyword">int</span> <span class="hljs-built_in">min</span> = i;        <span class="hljs-keyword">for</span>(j=i+<span class="hljs-number">1</span>; j&lt;n; j++)        &#123;            <span class="hljs-comment">// if(A[j] &lt; A[min]) </span>                <span class="hljs-built_in">min</span> = j;        &#125;        <span class="hljs-keyword">if</span>(<span class="hljs-built_in">min</span> != i)        &#123;            <span class="hljs-keyword">int</span> temp = A[i];            A[i] = A[<span class="hljs-built_in">min</span>];            A[<span class="hljs-built_in">min</span>] = temp;        &#125;        printA(A,<span class="hljs-number">11</span>);    &#125;&#125;</code></pre><h3 id="堆排序"><a href="#堆排序" class="headerlink" title="堆排序"></a>堆排序</h3><h4 id="建立大根堆"><a href="#建立大根堆" class="headerlink" title="建立大根堆"></a>建立大根堆</h4><p>A[0]不放元素，A[1]表示堆顶，将一维数组视为完全二叉树，A[i]的左右孩子为A[2*i]，A[2*i+1]，建堆时，从最后一个非叶节点开始调整，参数len表示堆中元素个数。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">BuildMaxHeap</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> len)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">int</span> i;    <span class="hljs-keyword">for</span>(i=len/<span class="hljs-number">2</span>; i&gt;=<span class="hljs-number">1</span>; i--)    &#123;        HeapAdjust(A, i, len);    &#125;&#125;</code></pre><h4 id="调整大根堆"><a href="#调整大根堆" class="headerlink" title="调整大根堆"></a>调整大根堆</h4><p>调整以A[k]为根节点的子树，需要满足堆的性质。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">HeapAdjust</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> k, <span class="hljs-keyword">int</span> len)</span></span><span class="hljs-function"></span>&#123;    A[<span class="hljs-number">0</span>] = A[k];    <span class="hljs-keyword">int</span> i;    <span class="hljs-keyword">for</span>(i=<span class="hljs-number">2</span>*k; i&lt;=len; i*=<span class="hljs-number">2</span>)    &#123;        <span class="hljs-comment">//找出k节点的key最大的孩子节点i</span>        <span class="hljs-keyword">if</span>(i&lt;len &amp;&amp; A[i]&lt;A[i+<span class="hljs-number">1</span>])            i++;        <span class="hljs-comment">/* 若满足大顶堆，即k节点key值大于孩子节点i的key，则退出；</span><span class="hljs-comment">        否则将i节点的值赋给双亲节点k，并去调整以i为根节点的子树，</span><span class="hljs-comment">        子树根节点的值始终为A[0]  */</span>        <span class="hljs-keyword">if</span>(A[<span class="hljs-number">0</span>] &gt;= A[i])            <span class="hljs-keyword">break</span>;        <span class="hljs-keyword">else</span>&#123;            A[k] = A[i];            k = i;        &#125;    &#125;    <span class="hljs-comment">//最后的k值即为最初调整的子树根节点的位置</span>    A[k] = A[<span class="hljs-number">0</span>];&#125;</code></pre><h4 id="堆排序-1"><a href="#堆排序-1" class="headerlink" title="堆排序"></a>堆排序</h4><p>堆排序，首先建立大根堆。</p><p>执行n-1次，每次将当前堆顶与堆最后一个元素交换，然后堆大小-1，调整堆。这样每次取出堆顶即最大元素，放在了数组末尾，然后调整堆，使A[1]为剩余元素的关键字最大元素。</p><p>调整时间与树高有关，时间复杂度$(nlog_2n)$，空间复杂度$O(1)$，不稳定</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">HeapSort</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> len)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">int</span> i;    BuildMaxHeap(A, len);    <span class="hljs-keyword">for</span>(i=len; i&gt;<span class="hljs-number">1</span>; i--)    &#123;        <span class="hljs-keyword">int</span> temp = A[i];        A[i] = A[<span class="hljs-number">1</span>];        A[<span class="hljs-number">1</span>] = temp;        HeapAdjust(A, <span class="hljs-number">1</span>, i<span class="hljs-number">-1</span>);    &#125;&#125;</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>学习</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>C</tag>
+      
+      <tag>数据结构</tag>
+      
+      <tag>算法</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>c--插入排序</title>
+    <link href="/amumu547426.github.io/2020/06/09/InsertSort/"/>
+    <url>/amumu547426.github.io/2020/06/09/InsertSort/</url>
+    
+    <content type="html"><![CDATA[<h3 id="直接插入排序"><a href="#直接插入排序" class="headerlink" title="直接插入排序"></a>直接插入排序</h3><p>  A[0]不存放元素，每次从数组后端无序部分取一个元素，插入到数组前端有序部分。</p><p>  时间复杂度$O(n^2)$，空间复杂度$O(1)$，稳定。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">DirectInsertSortAsc</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> n)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">int</span> i,j;    <span class="hljs-keyword">for</span>(i=<span class="hljs-number">2</span>; i&lt;=n; i++)    &#123;        <span class="hljs-keyword">if</span>(A[i] &lt; A[i<span class="hljs-number">-1</span>])        &#123;            A[<span class="hljs-number">0</span>] = A[i];            <span class="hljs-keyword">for</span>(j=i<span class="hljs-number">-1</span>; A[j]&gt;A[<span class="hljs-number">0</span>]; j--)            &#123;                A[j+<span class="hljs-number">1</span>] = A[j];            &#125;            A[j+<span class="hljs-number">1</span>] = A[<span class="hljs-number">0</span>];        &#125;    &#125;&#125;</code></pre><h3 id="折半插入排序"><a href="#折半插入排序" class="headerlink" title="折半插入排序"></a>折半插入排序</h3><p>  先折半查找出元素待插入位置，然后统一移动元素。</p><p>  时间复杂度$O(n^2)$，空间复杂度$O(1)$，稳定。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">HalfInsertSortAsc</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> n)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">int</span> i,j,low,high,mid;    <span class="hljs-keyword">for</span>(i=<span class="hljs-number">2</span>; i&lt;=n; i++)    &#123;        <span class="hljs-keyword">if</span>(A[i] &lt; A[i<span class="hljs-number">-1</span>])        &#123;            A[<span class="hljs-number">0</span>] = A[i];            low = <span class="hljs-number">1</span>;            high = i<span class="hljs-number">-1</span>;            <span class="hljs-keyword">while</span>(low &lt;= high)            &#123;                mid = (low+high)/<span class="hljs-number">2</span>;                <span class="hljs-keyword">if</span>(A[mid] &gt; A[<span class="hljs-number">0</span>])                &#123;                    high = mid<span class="hljs-number">-1</span>;                &#125;<span class="hljs-keyword">else</span>&#123;                    low = mid+<span class="hljs-number">1</span>;                &#125;            &#125;            <span class="hljs-keyword">for</span>(j=i<span class="hljs-number">-1</span>; j&gt;=high+<span class="hljs-number">1</span>; j--)            &#123;                A[j+<span class="hljs-number">1</span>] = A[j];            &#125;            A[high+<span class="hljs-number">1</span>] = A[<span class="hljs-number">0</span>];        &#125;    &#125;&#125;</code></pre><h3 id="希尔排序"><a href="#希尔排序" class="headerlink" title="希尔排序"></a>希尔排序</h3><p>按增量d分割排序表，对L[i,i+d,i+2d,…i+kd]子表进行插入排序，然后缩小d（一般d=d/2,初始n/2)直到d=1。</p><p>最坏情况下时间复杂度$O(n^2)$，空间复杂度$O(1)$，不稳定。</p><p>在希尔排序中，记录的比较和总移动次数比直接插入排序要少得多，n越大效果越明显，但n不宜过大，过多元素排序$O(n^2)$时间复杂度显然太慢了。</p><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">ShellSort</span><span class="hljs-params">(<span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> n)</span></span><span class="hljs-function"></span>&#123;    <span class="hljs-keyword">int</span> dk;    <span class="hljs-keyword">for</span>(dk=n/<span class="hljs-number">2</span>; dk&gt;=<span class="hljs-number">1</span>; dk/=<span class="hljs-number">2</span>)    &#123;        <span class="hljs-keyword">int</span> i,j;        <span class="hljs-keyword">for</span>(i=dk+<span class="hljs-number">1</span>; i&lt;=n; i++)        &#123;            <span class="hljs-keyword">if</span>(A[i] &lt; A[i-dk])            &#123;                A[<span class="hljs-number">0</span>] = A[i];                <span class="hljs-keyword">for</span>(j=i-dk; A[j]&gt;A[<span class="hljs-number">0</span>]; j-=dk)                &#123;                    A[j+dk] = A[j];                &#125;                A[j+dk] = A[<span class="hljs-number">0</span>];            &#125;        &#125;    &#125;&#125;</code></pre>]]></content>
+    
+    
+    <categories>
+      
+      <category>学习</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>C</tag>
+      
+      <tag>数据结构</tag>
+      
+      <tag>算法</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
