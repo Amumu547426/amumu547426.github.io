@@ -263,20 +263,21 @@
     
     
     <div class="col-12 col-md-12 mx-auto index-info">
-      <a class="index-header" href="/amumu547426.github.io/2020/06/10/Exchange/">c--交换排序</a>
+      <a class="index-header" href="/amumu547426.github.io/2020/06/10/SelectSort/">c--选择排序</a>
 
-      <a href="/amumu547426.github.io/2020/06/10/Exchange/" class="index-excerpt">
+      <a href="/amumu547426.github.io/2020/06/10/SelectSort/" class="index-excerpt">
         
         
           
         
-        <div>冒泡排序从后往前或从前往后依次比较相邻元素值，并按从小到大或从大到小交换，每趟固定一个关键字的位置。
-最坏情况下时间复杂度$O(n^2)$，平均时间复杂度$O(n^2)$，空间复杂度$O(1)$，稳定。
-排序趟数，交换次数与待排序序列有关系，当某一趟没有发生交换时，认为已经有序。
-void BubbleSort(int A[], int n)
+        <div>简单选择排序执行n-1趟，每趟从剩余的未排序序列中选取最小元素，交换到正确位置。
+时间复杂度$O(n^2)$，不稳定，关键字比较次数与待排序序列元素无关，总是要比较$O(n^2)$次。
+void SelectSort(int A[], int n)
 &#123;
-    int i,j,flag;
-  </div>
+    int i,j;
+    for(i=0; i&lt;n-1; i++)
+    &#123;
+        int min </div>
       </a>
 
       <div class="index-btm post-metas">
@@ -313,21 +314,20 @@ void BubbleSort(int A[], int n)
     
     
     <div class="col-12 col-md-12 mx-auto index-info">
-      <a class="index-header" href="/amumu547426.github.io/2020/06/10/SelectSort/">c--选择排序</a>
+      <a class="index-header" href="/amumu547426.github.io/2020/06/10/Exchange/">c--交换排序</a>
 
-      <a href="/amumu547426.github.io/2020/06/10/SelectSort/" class="index-excerpt">
+      <a href="/amumu547426.github.io/2020/06/10/Exchange/" class="index-excerpt">
         
         
           
         
-        <div>简单选择排序执行n-1趟，每趟从剩余的未排序序列中选取最小元素，交换到正确位置。
-时间复杂度$O(n^2)$，不稳定，关键字比较次数与待排序序列元素无关，总是要比较$O(n^2)$次。
-void SelectSort(int A[], int n)
+        <div>冒泡排序从后往前或从前往后依次比较相邻元素值，并按从小到大或从大到小交换，每趟固定一个关键字的位置。
+最坏情况下时间复杂度$O(n^2)$，平均时间复杂度$O(n^2)$，空间复杂度$O(1)$，稳定。
+排序趟数，交换次数与待排序序列有关系，当某一趟没有发生交换时，认为已经有序。
+void BubbleSort(int A[], int n)
 &#123;
-    int i,j;
-    for(i=0; i&lt;n-1; i++)
-    &#123;
-        int min </div>
+    int i,j,flag;
+  </div>
       </a>
 
       <div class="index-btm post-metas">
