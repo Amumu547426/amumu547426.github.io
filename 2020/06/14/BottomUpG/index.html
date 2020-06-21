@@ -225,7 +225,7 @@
             
               <p class="note note-info">
                 
-                  本文最后更新于：4 天前
+                  本文最后更新于：3 小时前
                 
               </p>
             
@@ -387,11 +387,11 @@
 <li>GOTO(I,X)：I的X后继</li>
 </ul>
 <div class="note note-success">
-            <p>CLOSURE(I)构造算法：</p><ul><li>首先将I中的各个项加入到CLOSURE(I)中</li><li>如果A→α·Bβ在CLOSURE(I)中，那么对B的任意产生式B→γ，将B→·γ加到CLOSURE(I)中</li><li>不断重复第二步，直到收敛</li></ul><p>例：增广文法：</p><ul><li>E‘→E</li><li>E→E+T | T</li><li>T→T*F | F</li><li>F→（E) | id</li></ul><p>项集{[E‘→E]}的闭包：</p><ul><li>[E‘→·E]</li><li>[E→·E+T]，[E→·T]</li><li>[T→·T*F]，[T→·F]</li><li>[F→·(E)]，[F→·id]</li></ul>
+            <p>CLOSURE(I)构造算法：</p><ul><li>首先将I中的各个项加入到CLOSURE(I)中</li><li>如果A→α·Bβ在CLOSURE(I)中，那么对B的任意产生式B→γ，将B→·γ加到CLOSURE(I)中</li><li>不断重复第二步，直到收敛</li></ul><p>例：增广文法：</p><ul><li>E&#39;→E</li><li>E→E+T | T</li><li>T→T*F | F</li><li>F→（E) | id</li></ul><p>项集{[E‘→E]}的闭包：</p><ul><li>[E&#39;→·E]</li><li>[E→·E+T]，[E→·T]</li><li>[T→·T*F]，[T→·F]</li><li>[F→·(E)]，[F→·id]</li></ul>
           </div>
 
 <div class="note note-info">
-            <p>GOTO函数：</p><ul><li>GOTO(I,X)：I中形如[A→α·Xβ]的项对应的项[A→αX·β]的闭包，定义了LR(0)自动机中状态I在X之上的转换</li><li>例：I={[E’→E·],[E→E·+T]}，则GOTO(I,+)：<ul><li>I中第二项·后出现+，对应项为[E→E·+T]</li><li>GOTO(I,+)=CLOSURE({[E→E+·T]})={ [E→E+·T], [T→·T*F], [T→·F], [F→·(E)], [F→·id] }</li></ul></li></ul>
+            <p>GOTO函数：</p><ul><li>GOTO(I,X)：I中形如[A→α·Xβ]的项对应的项[A→αX·β]的闭包，定义了LR(0)自动机中状态I在X之上的转换</li><li>例：I={[E&#39;→E·],[E→E·+T]}，则GOTO(I,+)：<ul><li>I中第二项·后出现+，对应项为[E→E·+T]</li><li>GOTO(I,+)=CLOSURE({[E→E+·T]})={ [E→E+·T], [T→·T*F], [T→·F], [F→·(E)], [F→·id] }</li></ul></li></ul>
           </div>
 
 <div class="note note-secondary">
@@ -543,6 +543,12 @@ while(true)&#123;
                 <div class="post-prevnext row">
                   <div class="post-prev col-6">
                     
+                    
+                      <a href="/amumu547426.github.io/2020/06/21/SDD/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">语法制导翻译</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </div>
                   <div class="post-next col-6">
