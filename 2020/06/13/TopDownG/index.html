@@ -1,0 +1,186 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>自顶向下分析-LL(1)文法 | Haunting</title><meta name="description" content="LL(1)文法自顶向下分析法希望文法满足的条件从左至右扫描输入串，寻找它的一个最左推导；对于G的每个非终结符A，若A有多个不同的候选式时，在选择产生某个终结符号时能唯一选定一个。给定文法S→cAd，A→ab|a，A的候选式ab和a具有相同首部终结符号，LL(1)文法希望避免这种文法。 串首终结符集-FIRST集FIRST(α)即关于α的所有产生式右部第一个遇到终结符。FIRST(α)&#x3D;{a|α&#x3D;*"><meta name="keywords" content="语法分析"><meta name="author" content="JPF,jpf547426@gmail.com"><meta name="copyright" content="JPF"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/amumu547426.github.io/img/logo.png"><link rel="canonical" href="https://amumu547426.github.io/2020/06/13/TopDownG/"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//www.google-analytics.com" crossorigin="crossorigin"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin="crossorigin"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta property="og:type" content="article"><meta property="og:title" content="自顶向下分析-LL(1)文法"><meta property="og:url" content="https://amumu547426.github.io/2020/06/13/TopDownG/"><meta property="og:site_name" content="Haunting"><meta property="og:description" content="LL(1)文法自顶向下分析法希望文法满足的条件从左至右扫描输入串，寻找它的一个最左推导；对于G的每个非终结符A，若A有多个不同的候选式时，在选择产生某个终结符号时能唯一选定一个。给定文法S→cAd，A→ab|a，A的候选式ab和a具有相同首部终结符号，LL(1)文法希望避免这种文法。 串首终结符集-FIRST集FIRST(α)即关于α的所有产生式右部第一个遇到终结符。FIRST(α)&#x3D;{a|α&#x3D;*"><meta property="og:image" content="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg"><meta property="article:published_time" content="2020-06-13T10:00:13.000Z"><meta property="article:modified_time" content="2020-07-04T13:20:14.742Z"><meta name="twitter:card" content="summary"><script>var activateDarkMode = function () {
+  document.documentElement.setAttribute('data-theme', 'dark')
+  if (document.querySelector('meta[name="theme-color"]') !== null) {
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#000')
+  }
+}
+var activateLightMode = function () {
+  document.documentElement.setAttribute('data-theme', 'light')
+  if (document.querySelector('meta[name="theme-color"]') !== null) {
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#fff')
+  }
+}
+
+var getCookies = function (name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+}
+
+var autoChangeMode = 'false'
+var t = getCookies('theme')
+if (autoChangeMode === '1') {
+  var isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+  var isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+  var isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+  if (t === undefined) {
+    if (isLightMode) activateLightMode()
+    else if (isDarkMode) activateDarkMode()
+    else if (isNotSpecified || hasNoSupport) {
+      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
+      var now = new Date()
+      var hour = now.getHours()
+      var isNight = hour <= 6 || hour >= 18
+      isNight ? activateDarkMode() : activateLightMode()
+    }
+    window.matchMedia('(prefers-color-scheme: dark)').addListener(function (e) {
+      if (Cookies.get('theme') === undefined) {
+        e.matches ? activateDarkMode() : activateLightMode()
+      }
+    })
+  } else if (t === 'light') activateLightMode()
+  else activateDarkMode()
+} else if (autoChangeMode === '2') {
+  now = new Date()
+  hour = now.getHours()
+  isNight = hour <= 6 || hour >= 18
+  if (t === undefined) isNight ? activateDarkMode() : activateLightMode()
+  else if (t === 'light') activateLightMode()
+  else activateDarkMode()
+} else {
+  if (t === 'dark') activateDarkMode()
+  else if (t === 'light') activateLightMode()
+}</script><link rel="stylesheet" href="/amumu547426.github.io/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="prev" title="语法制导翻译" href="https://amumu547426.github.io/2020/06/21/SDD/"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?4beb37a543af8fcfbbc2ab3409390e8e";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-169236233-1', 'auto');
+ga('send', 'pageview');
+</script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap"><script>var GLOBAL_CONFIG = { 
+  root: '/amumu547426.github.io/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  bookmark: {
+    message_prev: '按',
+    message_next: '键将本页加入书签'
+  },
+  runtime_unit: '天',
+  runtime: false,
+  copyright: undefined,
+  ClickShowText: undefined,
+  medium_zoom: false,
+  fancybox: true,
+  Snackbar: undefined,
+  justifiedGallery: {
+    js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+    css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+  },
+  baiduPush: false,
+  highlightCopy: true,
+  highlightLang: true,
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isanchor: false    
+}</script><script>var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isSidebar: true
+  }</script><noscript><style>
+#nav {
+  opacity: 1
+}
+.justified-gallery img{
+  opacity: 1
+}
+</style></noscript><meta name="generator" content="Hexo 4.2.1"></head><body><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="/amumu547426.github.io/img/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/amumu547426.github.io/archives/"><div class="headline">文章</div><div class="length_num">4</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/amumu547426.github.io/tags/"><div class="headline">标签</div><div class="length_num">4</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/amumu547426.github.io/categories/"><div class="headline">分类</div><div class="length_num">1</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page"><i class="fa-fw fas fa-list"></i><span> 影音</span><i class="fas fa-chevron-down menus-expand"></i></a><ul class="menus_item_child"><li><a class="site-page" href="/amumu547426.github.io/music/"><i class="fa-fw fas fa-music"></i><span> Music</span></a></li><li><a class="site-page" href="/amumu547426.github.io/movies/"><i class="fa-fw fas fa-video"></i><span> Movie</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><i class="fas fa-arrow-right on" id="toggle-sidebar"></i><div id="sidebar"><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar">     </div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#LL-1-文法"><span class="toc-number">1.</span> <span class="toc-text">LL(1)文法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自顶向下分析法希望文法满足的条件"><span class="toc-number">1.1.</span> <span class="toc-text">自顶向下分析法希望文法满足的条件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#串首终结符集-FIRST集"><span class="toc-number">1.2.</span> <span class="toc-text">串首终结符集-FIRST集</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#非终结符后继符号集-FOLLOW集"><span class="toc-number">1.3.</span> <span class="toc-text">非终结符后继符号集-FOLLOW集</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#产生式可选集-SELECT集"><span class="toc-number">1.4.</span> <span class="toc-text">产生式可选集-SELECT集</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#LL-1-文法-1"><span class="toc-number">1.5.</span> <span class="toc-text">LL(1)文法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#LL-1-文法分析原理"><span class="toc-number">1.6.</span> <span class="toc-text">LL(1)文法分析原理</span></a></li></ol></li></ol></div></div></div><div id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg)"><nav id="nav"><span class="pull-left" id="blog_name"><a class="blog_title" id="site-name" href="/amumu547426.github.io/">Haunting</a></span><span class="pull-right menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page"><i class="fa-fw fas fa-list"></i><span> 影音</span><i class="fas fa-chevron-down menus-expand"></i></a><ul class="menus_item_child"><li><a class="site-page" href="/amumu547426.github.io/music/"><i class="fa-fw fas fa-music"></i><span> Music</span></a></li><li><a class="site-page" href="/amumu547426.github.io/movies/"><i class="fa-fw fas fa-video"></i><span> Movie</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></span></span></nav><div id="post-info"><div id="post-title"><div class="posttitle">自顶向下分析-LL(1)文法</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2020-06-13 18:00:13"><i class="far fa-calendar-alt fa-fw"></i> 发表于 2020-06-13</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-07-04 21:20:14"><i class="fas fa-history fa-fw"></i> 更新于 2020-07-04</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fas fa-inbox fa-fw post-meta__icon"></i><a class="post-meta__categories" href="/amumu547426.github.io/categories/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86/">编译原理</a></span></div><div class="meta-secondline"> </div><div class="meta-thirdline"><span class="post-meta-pv-cv"><i class="far fa-eye fa-fw post-meta__icon"></i><span>阅读量:</span><span id="busuanzi_value_page_pv"></span></span><span class="post-meta-commentcount"></span></div></div></div></header><main class="layout_post" id="content-inner"><article id="post"><div class="post-content" id="article-container"><h3 id="LL-1-文法"><a href="#LL-1-文法" class="headerlink" title="LL(1)文法"></a>LL(1)文法</h3><h4 id="自顶向下分析法希望文法满足的条件"><a href="#自顶向下分析法希望文法满足的条件" class="headerlink" title="自顶向下分析法希望文法满足的条件"></a>自顶向下分析法希望文法满足的条件</h4><p>从左至右扫描输入串，寻找它的一个最左推导；对于G的每个非终结符A，若A有多个不同的候选式时，在选择产生某个终结符号时能唯一选定一个。给定文法S→cAd，A→ab|a，A的候选式ab和a具有相同首部终结符号，LL(1)文法希望避免这种文法。</p>
+<h4 id="串首终结符集-FIRST集"><a href="#串首终结符集-FIRST集" class="headerlink" title="串首终结符集-FIRST集"></a>串首终结符集-FIRST集</h4><p>FIRST(α)即关于α的所有产生式右部第一个遇到终结符。FIRST(α)={a|α=*&gt;a…,a∈$V_t$*}</p>
+<p>求FIRST集的算法</p>
+<ul>
+<li>令α=$X_1$…$X_n$</li>
+<li>初值：<ul>
+<li>FIRST(α)=FIRST($X_1$)-{ε}</li>
+<li>k=1</li>
+</ul>
+</li>
+<li>循环<ul>
+<li>while ε∈FIRST($X_k$) &amp;&amp; k&lt;n  do<ul>
+<li>FIRST(α)=FIRST(α)∪(FIRST($X_{k+1}$)-{ε}) </li>
+<li>k = k+1</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>结束<ul>
+<li>if k==n &amp;&amp; ε∈FIRST($X_k$) then FIRST(α)=FIRST(α)∪{ε}</li>
+</ul>
+</li>
+</ul>
+<h4 id="非终结符后继符号集-FOLLOW集"><a href="#非终结符后继符号集-FOLLOW集" class="headerlink" title="非终结符后继符号集-FOLLOW集"></a>非终结符后继符号集-FOLLOW集</h4><p>FOLLOW(A)即非终结符A的后续符号集。FOLLOW(A)={a|S=<em>&gt;…Aa…,a∈$V_t$\</em>}</p>
+<p>求FOLLOW集的算法</p>
+<ul>
+<li>若B→αAaβ，a是终结符，则把a放入FOLLOW(A)中</li>
+<li>若B→αAXβ，X是非终结符，则把FIRST(Xβ)放入FOLLOW(A)中</li>
+<li>若B→αA或B→αAβ，但β=&gt;ε，则把FOLLOW(B)放入FOLLOW(A)中</li>
+<li>若S是开始符，则$∈FOLLOW(S)</li>
+<li>若A→αBβ，则FIRST(β)中除了ε之外所有符号均在FOLLOW(B)中</li>
+<li>若A→αB或A→αBβ，且FIRST(β)包含ε，则FOLLOW(A)所有符号均在FOLLOW(B)中</li>
+</ul>
+<h4 id="产生式可选集-SELECT集"><a href="#产生式可选集-SELECT集" class="headerlink" title="产生式可选集-SELECT集"></a>产生式可选集-SELECT集</h4><ul>
+<li>产生式A→β的可选集是指可以选用该产生式进行推导时对应的输入符号集合，记为SELECT(A→β)<ul>
+<li>SELECT(A→αβ)={α}</li>
+<li>SELECT(A→ε)=FOLLOW(A)</li>
+</ul>
+</li>
+</ul>
+<h4 id="LL-1-文法-1"><a href="#LL-1-文法-1" class="headerlink" title="LL(1)文法"></a>LL(1)文法</h4><p>对G中任意变量A，A→$a_1$|$a_2$|…|$a_n$是A的所有产生式，若他们满足</p>
+<ul>
+<li>FIRST($a_i$)∩FIRST($a_j$) =Φ       i≠ j</li>
+<li>当ε∈FIRST($a_j$)时，FOLLOW(A)∩FIRST($a_j$)=Φ</li>
+</ul>
+<p>则称G为LL(1)文法。</p>
+<h4 id="LL-1-文法分析原理"><a href="#LL-1-文法分析原理" class="headerlink" title="LL(1)文法分析原理"></a>LL(1)文法分析原理</h4><p><img src= "/amumu547426.github.io/img/loading.gif" data-src="im1.png" alt=""></p>
+</div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/amumu547426.github.io/tags/%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90/">语法分析</a></div><div class="post_share"><div class="social-share" data-image="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/amumu547426.github.io/2020/06/21/SDD/"><img class="prev-cover" data-src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="onerror=null;src='/amumu547426.github.io/img/404.jpg'"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">语法制导翻译</div></div></a></div></nav><div class="relatedPosts"><div class="relatedPosts_headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts_list"><div class="relatedPosts_item"><a href="/amumu547426.github.io/2020/06/28/BottomUpG/" title="自底向上分析法"><img class="relatedPosts_cover" data-src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg"><div class="relatedPosts_main is-center"><div class="relatedPosts_date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-28</div><div class="relatedPosts_title">自底向上分析法</div></div></a></div></div></div><hr><div id="post-comment"><div class="comment_headling"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div><div class="vcomment" id="vcomment"></div><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var requestSetting = function (from,set) {
+  var from = from
+  var setting = set.split(',').filter(function(item){
+  return from.indexOf(item) > -1
+  });
+  setting = setting.length == 0 ? from :setting;
+  return setting
+}
+
+var guestInfo = requestSetting(['nick','mail','link'],'nick,mail,link')
+var requiredFields = requestSetting(['nick','mail'],'nick,mail')
+
+window.valine = new Valine({
+  el:'#vcomment',
+  appId: 'bBew5zit71oYgat9bmNjTI8Y-gzGzoHsz# leancloud application app id',
+  appKey: 'Mzi1bqj9diHLCiqQiXhOcHw6# leancloud application app key',
+  placeholder: 'Please leave your footprints',
+  avatar: 'monsterid',
+  meta: guestInfo,
+  pageSize: '10',
+  lang: 'zh-CN',
+  recordIP: false,
+  serverURLs: '',
+  emojiCDN: '',
+  emojiMaps: "",
+  enableQQ: true,
+  requiredFields: requiredFields
+});</script></div></article></main><footer id="footer" data-type="color"><div id="footer-wrap"><div class="copyright">&copy;2020 By JPF</div><div class="framework-info"><span>驱动 </span><a href="https://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span class="footer-separator">|</span><span>主题 </span><a href="https://github.com/jerryc127/hexo-theme-butterfly" target="_blank" rel="noopener"><span>Butterfly</span></a></div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><button id="readmode" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font_plus" title="放大字体"><i class="fas fa-plus"></i></button><button id="font_minus" title="缩小字体"><i class="fas fa-minus"></i></button><button class="translate_chn_to_cht" id="translateLink" title="简繁转换">繁</button><button id="darkmode" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" title="设置"><i class="fas fa-cog"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fas fa-comments"></i></a><button class="close" id="mobile-toc-button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></section><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/amumu547426.github.io/js/utils.js"></script><script src="/amumu547426.github.io/js/main.js"></script><script src="/amumu547426.github.io/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module" defer></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload/dist/lazyload.iife.min.js" async></script></body></html>
