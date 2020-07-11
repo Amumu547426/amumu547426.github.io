@@ -134,7 +134,8 @@ ga('send', 'pageview');
 </ul>
 <p>处理办法有两种：</p>
 <ul>
-<li>对每一个产生式编制一个语义子程序，当一个产生式获得匹配时，调用相应的语义子程序实现语义检查与翻译<ul>
+<li><p>对每一个产生式编制一个语义子程序，当一个产生式获得匹配时，调用相应的语义子程序实现语义检查与翻译</p>
+<ul>
 <li>E→<h>E<sub>1</sub></h>+T       E.val:=E.val+T.val</li>
 <li>T→<h>T<sub>1</sub></h>*F       <h>T<sub>1</sub></h>.val:=E.val*F.val</li>
 <li>F→id                             F.val:=id.val</li>
@@ -150,21 +151,20 @@ ga('send', 'pageview');
 <li>L→{<h>L<sub>1</sub></h>.inh:=L.inh}<h>L<sub>1</sub></h>, id{…}</li>
 </ul>
 </li>
-<li>适合在进行推导时完成</li>
+<li><p>适合在进行推导时完成</p>
+</li>
 </ul>
 <h3 id="继承属性和综合属性"><a href="#继承属性和综合属性" class="headerlink" title="继承属性和综合属性"></a>继承属性和综合属性</h3><p>综合属性：分析树结点N上的非终结符号A的属性值由N的产生式所关联的语义规则定义，又称S-属性定义。必然通过N的子结点或N本身的属性值来定义。</p>
 <p>继承属性：分析树结点N的属性值由N的父节点所关联的语义规则来定义，又称为L-属性定义。依赖于N的父结点，N本身和N的兄弟结点上的属性值。</p>
 <p>不允许N的继承属性通过N的子结点上的属性来定义，但允许N的综合属性依赖于N本身的继承属性。终结符号有综合属性，但没有继承属性。</p>
-<h4 id="S属性的SDD，可以按照自底向上方式求值："><a href="#S属性的SDD，可以按照自底向上方式求值：" class="headerlink" title="S属性的SDD，可以按照自底向上方式求值："></a>S属性的SDD，可以按照自底向上方式求值：</h4><div class="table-container">
-<table>
+<h4 id="S属性的SDD，可以按照自底向上方式求值："><a href="#S属性的SDD，可以按照自底向上方式求值：" class="headerlink" title="S属性的SDD，可以按照自底向上方式求值："></a>S属性的SDD，可以按照自底向上方式求值：</h4><table>
 <thead>
 <tr>
 <th>产生式</th>
 <th>语义规则</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>L→E n</td>
 <td>L.val = E.val</td>
 </tr>
@@ -192,9 +192,7 @@ ga('send', 'pageview');
 <td>F→digit</td>
 <td>F.val = digit.lexval</td>
 </tr>
-</tbody>
-</table>
-</div>
+</tbody></table>
 <p>输入3*5+4n的注释语法分析树：</p>
 <p><img src= "/amumu547426.github.io/img/loading.gif" data-src="pic1.png" alt=""></p>
 <h4 id="适用自顶向下分析的SDD，带有综合属性的SDD："><a href="#适用自顶向下分析的SDD，带有综合属性的SDD：" class="headerlink" title="适用自顶向下分析的SDD，带有综合属性的SDD："></a>适用自顶向下分析的SDD，带有综合属性的SDD：</h4><p>例如如下消除左递归的表达式文法</p>
@@ -205,7 +203,6 @@ ga('send', 'pageview');
 <li>F→digit</li>
 </ul>
 <p>T中不含运算符，无法直接使用综合属性。</p>
-<div class="table-container">
 <table>
 <thead>
 <tr>
@@ -213,8 +210,7 @@ ga('send', 'pageview');
 <th>语义规则</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>T→FT&#39;</td>
 <td>T&#39;.inh = F.val <br> T.val = T&#39;.syn</td>
 </tr>
@@ -230,9 +226,7 @@ ga('send', 'pageview');
 <td>F→digit</td>
 <td>F.val = digit.lexval</td>
 </tr>
-</tbody>
-</table>
-</div>
+</tbody></table>
 <p>  <img src= "/amumu547426.github.io/img/loading.gif" data-src="pic2.png" alt=""><br>  <img src= "/amumu547426.github.io/img/loading.gif" data-src="pic3.png" alt=""></p>
 <h3 id="SDD的求值顺序"><a href="#SDD的求值顺序" class="headerlink" title="SDD的求值顺序"></a>SDD的求值顺序</h3><p>依赖图描述了某棵特定的分析树上各个属性实例之间的信息流。</p>
 <p>依赖图的构造：</p>
@@ -243,7 +237,7 @@ ga('send', 'pageview');
 <p>形如a*b的语法分析树：</p>
 <p>  <img src= "/amumu547426.github.io/img/loading.gif" data-src="pic4.png" alt=""></p>
 <p>可能的计算顺序：1,2,3,4,5,6,7,8,9或1,3,5,2,4,6,7,8,9</p>
-<p>属性值计算顺序可以按依赖图的拓扑排序来计算，图中不能存在环。给定一个SDD很难判定是否存在一颗分析树，其对应的依赖图包含环。而特定的SDD一定不包含环，且具有固定的排序模式—S属性SDD和L属性SDD</p>
+<p>属性值计算顺序可以按依赖图的拓扑排序来计算，图中不能存在环。给定一个SDD很难判定是否存在一颗分析树，其对应的依赖图包含环。而特定的SDD一定不包含环，且具有固定的排序模式–S属性SDD和L属性SDD</p>
 <h4 id="S属性的SDD"><a href="#S属性的SDD" class="headerlink" title="S属性的SDD"></a>S属性的SDD</h4><ul>
 <li>每个属性都是综合属性</li>
 <li>都是根据子构造的属性计算整个构造的属性</li>
