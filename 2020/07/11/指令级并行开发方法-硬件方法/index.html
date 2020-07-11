@@ -1,0 +1,722 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>指令级并行开发方法-硬件方法1 | Haunting</title><meta name="description" content="指令级并行概念             指令级并行(ILP: Instruction-Level Parallelism)：指令之间存在的一种并行性，利用它计算机可以并行执行两条或两条以上的指令。             开发ILP的方法主要分为基于硬件的动态开发方法和基于软件的静态开发方法。              基本程序块：一串连续的代码除了入口和出口以外，没有其他的分支指令和转入点程序平"><meta name="keywords" content="指令级并行开发方法 - 指令动态调度"><meta name="author" content="Haunting,jpf547426@gmail.com"><meta name="copyright" content="Haunting"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/amumu547426.github.io/img/logo.png"><link rel="canonical" href="https://amumu547426.github.io/2020/07/11/%E6%8C%87%E4%BB%A4%E7%BA%A7%E5%B9%B6%E8%A1%8C%E5%BC%80%E5%8F%91%E6%96%B9%E6%B3%95-%E7%A1%AC%E4%BB%B6%E6%96%B9%E6%B3%95/"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//www.google-analytics.com" crossorigin="crossorigin"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin="crossorigin"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta property="og:type" content="article"><meta property="og:title" content="指令级并行开发方法-硬件方法1"><meta property="og:url" content="https://amumu547426.github.io/2020/07/11/%E6%8C%87%E4%BB%A4%E7%BA%A7%E5%B9%B6%E8%A1%8C%E5%BC%80%E5%8F%91%E6%96%B9%E6%B3%95-%E7%A1%AC%E4%BB%B6%E6%96%B9%E6%B3%95/"><meta property="og:site_name" content="Haunting"><meta property="og:description" content="指令级并行概念             指令级并行(ILP: Instruction-Level Parallelism)：指令之间存在的一种并行性，利用它计算机可以并行执行两条或两条以上的指令。             开发ILP的方法主要分为基于硬件的动态开发方法和基于软件的静态开发方法。              基本程序块：一串连续的代码除了入口和出口以外，没有其他的分支指令和转入点程序平"><meta property="og:image" content="https://i.loli.net/2020/07/11/Ua2YfSWosN73qJV.jpg"><meta property="article:published_time" content="2020-07-11T06:58:03.000Z"><meta property="article:modified_time" content="2020-07-11T13:36:05.126Z"><meta name="twitter:card" content="summary"><script>var activateDarkMode = function () {
+  document.documentElement.setAttribute('data-theme', 'dark')
+  if (document.querySelector('meta[name="theme-color"]') !== null) {
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#000')
+  }
+}
+var activateLightMode = function () {
+  document.documentElement.setAttribute('data-theme', 'light')
+  if (document.querySelector('meta[name="theme-color"]') !== null) {
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#fff')
+  }
+}
+
+var getCookies = function (name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+}
+
+var autoChangeMode = 'false'
+var t = getCookies('theme')
+if (autoChangeMode === '1') {
+  var isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+  var isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+  var isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+  if (t === undefined) {
+    if (isLightMode) activateLightMode()
+    else if (isDarkMode) activateDarkMode()
+    else if (isNotSpecified || hasNoSupport) {
+      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
+      var now = new Date()
+      var hour = now.getHours()
+      var isNight = hour <= 6 || hour >= 18
+      isNight ? activateDarkMode() : activateLightMode()
+    }
+    window.matchMedia('(prefers-color-scheme: dark)').addListener(function (e) {
+      if (Cookies.get('theme') === undefined) {
+        e.matches ? activateDarkMode() : activateLightMode()
+      }
+    })
+  } else if (t === 'light') activateLightMode()
+  else activateDarkMode()
+} else if (autoChangeMode === '2') {
+  now = new Date()
+  hour = now.getHours()
+  isNight = hour <= 6 || hour >= 18
+  if (t === undefined) isNight ? activateDarkMode() : activateLightMode()
+  else if (t === 'light') activateLightMode()
+  else activateDarkMode()
+} else {
+  if (t === 'dark') activateDarkMode()
+  else if (t === 'light') activateLightMode()
+}</script><link rel="stylesheet" href="/amumu547426.github.io/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css"><link rel="next" title="软件工程复习" href="https://amumu547426.github.io/2020/07/09/SE/"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?4beb37a543af8fcfbbc2ab3409390e8e";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-169236233-1', 'auto');
+ga('send', 'pageview');
+</script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap"><script>var GLOBAL_CONFIG = { 
+  root: '/amumu547426.github.io/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容:${query}"}},
+  translate: undefined,
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  bookmark: {
+    message_prev: '按',
+    message_next: '键将本页加入书签'
+  },
+  runtime_unit: '天',
+  runtime: true,
+  copyright: undefined,
+  ClickShowText: undefined,
+  medium_zoom: false,
+  fancybox: true,
+  Snackbar: {"bookmark":{"message_prev":"按","message_next":"键将本页加入书签"},"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  justifiedGallery: {
+    js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+    css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+  },
+  baiduPush: false,
+  highlightCopy: true,
+  highlightLang: true,
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isanchor: false    
+}</script><script>var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isSidebar: true
+  }</script><noscript><style>
+#nav {
+  opacity: 1
+}
+.justified-gallery img{
+  opacity: 1
+}
+</style></noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/amumu547426/ashe@v1.0.0/mystyl.css"><meta name="generator" content="Hexo 4.2.1"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="https://i.loli.net/2020/07/07/U3nb4WG2xQiZRsf.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/amumu547426.github.io/archives/"><div class="headline">文章</div><div class="length_num">8</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/amumu547426.github.io/tags/"><div class="headline">标签</div><div class="length_num">6</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/amumu547426.github.io/categories/"><div class="headline">分类</div><div class="length_num">3</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间戳</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page"><i class="fa-fw fas fa-list"></i><span> 影音</span><i class="fas fa-chevron-down menus-expand"></i></a><ul class="menus_item_child"><li><a class="site-page" href="/amumu547426.github.io/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page" href="/amumu547426.github.io/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/talk/"><i class="fa-fw fas fa-edit"></i><span> 说说</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><i class="fas fa-arrow-right on" id="toggle-sidebar"></i><div id="sidebar"><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar">     </div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#指令级并行概念"><span class="toc-number">1.</span> <span class="toc-text">指令级并行概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#相关与指令级并行"><span class="toc-number">2.</span> <span class="toc-text">相关与指令级并行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#指令动态调度"><span class="toc-number">3.</span> <span class="toc-text">指令动态调度</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#静态调度"><span class="toc-number">3.0.1.</span> <span class="toc-text">静态调度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#动态调度"><span class="toc-number">3.0.2.</span> <span class="toc-text">动态调度</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#动态调度基本思想"><span class="toc-number">3.1.</span> <span class="toc-text">动态调度基本思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#记分牌动态调度算法"><span class="toc-number">3.2.</span> <span class="toc-text">记分牌动态调度算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本思想"><span class="toc-number">3.2.1.</span> <span class="toc-text">基本思想</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#记分牌中的信息"><span class="toc-number">3.2.2.</span> <span class="toc-text">记分牌中的信息</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#例子："><span class="toc-number">3.2.3.</span> <span class="toc-text">例子：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法"><span class="toc-number">3.2.4.</span> <span class="toc-text">算法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#记分牌的性能受限于以下几个方面"><span class="toc-number">3.2.5.</span> <span class="toc-text">记分牌的性能受限于以下几个方面</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Tomasulo算法"><span class="toc-number">3.3.</span> <span class="toc-text">Tomasulo算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本思想-1"><span class="toc-number">3.3.1.</span> <span class="toc-text">基本思想</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#硬件说明"><span class="toc-number">3.3.2.</span> <span class="toc-text">硬件说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#例子：-1"><span class="toc-number">3.3.3.</span> <span class="toc-text">例子：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#具体算法"><span class="toc-number">3.3.4.</span> <span class="toc-text">具体算法</span></a></li></ol></li></ol></li></ol></div></div></div><div id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://i.loli.net/2020/07/11/Ua2YfSWosN73qJV.jpg)"><nav id="nav"><span class="pull-left" id="blog_name"><a class="blog_title" id="site-name" href="/amumu547426.github.io/">Haunting</a></span><span class="pull-right menus"><div id="search_button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间戳</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page"><i class="fa-fw fas fa-list"></i><span> 影音</span><i class="fas fa-chevron-down menus-expand"></i></a><ul class="menus_item_child"><li><a class="site-page" href="/amumu547426.github.io/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page" href="/amumu547426.github.io/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/talk/"><i class="fa-fw fas fa-edit"></i><span> 说说</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/amumu547426.github.io/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></span></span></nav><div id="post-info"><div id="post-title"><div class="posttitle">指令级并行开发方法-硬件方法1</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2020-07-11 14:58:03"><i class="far fa-calendar-alt fa-fw"></i> 发表于 2020-07-11</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-07-11 21:36:05"><i class="fas fa-history fa-fw"></i> 更新于 2020-07-11</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fas fa-inbox fa-fw post-meta__icon"></i><a class="post-meta__categories" href="/amumu547426.github.io/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/">计算机体系结构</a></span></div><div class="meta-secondline"> <span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta__icon"></i><span>字数总计:</span><span class="word-count">6.5k</span><span class="post-meta__separator">|</span><i class="far fa-clock fa-fw post-meta__icon"></i><span>阅读时长: 21 分钟</span></span></div><div class="meta-thirdline"><span class="post-meta-pv-cv"><span class="post-meta__separator">|</span><i class="far fa-eye fa-fw post-meta__icon"></i><span>阅读量:</span><span id="busuanzi_value_page_pv"></span></span><span class="post-meta-commentcount"></span></div></div></div></header><main class="layout_post" id="content-inner"><article id="post"><div class="post-content" id="article-container"><h2 id="指令级并行概念"><a href="#指令级并行概念" class="headerlink" title="指令级并行概念"></a>指令级并行概念</h2><div class="note info">
+            <p>指令级并行(ILP: Instruction-Level Parallelism)：指令之间存在的一种并行性，利用它计算机可以并行执行两条或两条以上的指令。</p>
+          </div>
+
+<p>开发ILP的方法主要分为基于硬件的动态开发方法和基于软件的静态开发方法。</p>
+<div class="note default">
+            <p>基本程序块：一串连续的代码除了入口和出口以外，没有其他的分支指令和转入点</p><ul><li>程序平均每4-7条指令就会有一个分支</li></ul><p>循环级并行：使一个循环中的不同循环体并行执行</p><ul><li>开发循环的不同迭代之间存在的并行性（最常见、最基本）</li><li>是指令级并行研究的重点之一</li></ul>
+          </div>
+
+<p>最基本的开发循环级并行的技术：</p>
+<ul>
+<li>循环展开技术</li>
+<li>采用向量指令和向量数据表示</li>
+</ul>
+<h2 id="相关与指令级并行"><a href="#相关与指令级并行" class="headerlink" title="相关与指令级并行"></a>相关与指令级并行</h2><div class="note success">
+            <p>相关有三种类型：数据相关，名相关，控制相关。</p><p>流水线冲突：对于具体的流水线，由于相关的存在，使得指令流中的下一条指令不能在指定的时钟周期执行</p><ul><li>结构冲突：多个指令的执行向同一硬件资源提出请求（硬件资源无法满足程序并行运行）</li><li>数据冲突：由数据相关产生的冲突，后一条指令需要使用前一条指令执行结果而产生的冲突<ul><li>写后读冲突RAW：真数据相关，下一条指令依赖于上一条指令的执行结果</li><li>写后写冲突WAW：名相关的输出相关，两条指令写同一个名</li><li>读后写冲突WAR：名相关的反相关，后条指令写的名与前条指令读的名相同</li></ul></li></ul>
+          </div>
+
+<p>可从两方面解决相关问题：</p>
+<ul>
+<li>保持相关，但避免发生冲突<ul>
+<li>指令调度</li>
+</ul>
+</li>
+<li>通过代码变换，消除相关</li>
+</ul>
+<div class="note success">
+            <p>程序顺序：由原来程序确定的在完全串行方式下指令的执行顺序</p>
+          </div>
+
+<p>对于正确地执行程序来说，必须保持最关键的两个属性：数据流和异常行为</p>
+<ul>
+<li>保持异常行为：无论怎么改变指令的执行顺序都不能改变程序中的异常发生情况</li>
+<li>数据流：数据值从其产生着指令到其消费者指令的实际流动</li>
+</ul>
+<p>分支指令使得数据流具有动态性。</p>
+<p>有时，不遵守控制相关既不影响异常行为也不改变数据流，可以大胆地进行指令调度，把失败分支的指令调度到分支指令之前。</p>
+<h2 id="指令动态调度"><a href="#指令动态调度" class="headerlink" title="指令动态调度"></a>指令动态调度</h2><h4 id="静态调度"><a href="#静态调度" class="headerlink" title="静态调度"></a>静态调度</h4><ul>
+<li>依靠编译器对代码进行静态调度以减少相关和冲突</li>
+<li>通过把相关的指令拉开距离来减少可能的停顿</li>
+</ul>
+<h4 id="动态调度"><a href="#动态调度" class="headerlink" title="动态调度"></a>动态调度</h4><ul>
+<li>在程序执行过程中依靠专门硬件对代码进行调度，减少数据相关导致的停顿</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>能够处理一些在编译时情况不明的相关（涉及存储器访问的相关），并简化了编译器</li>
+<li>能够使本来是面向某一流水线优化编译的代码在其他的流水线上也能高效运行</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>以硬件的复杂性显著提升为代价</li>
+</ul>
+<h3 id="动态调度基本思想"><a href="#动态调度基本思想" class="headerlink" title="动态调度基本思想"></a>动态调度基本思想</h3><div class="note success">
+            <p>流水线的最大局限性：指令是按序流出和按序执行的</p>
+          </div>
+
+<table>
+<thead>
+<tr>
+<th>按序发射按序执行</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DIV.D F4,F0,F2</td>
+<td>IF</td>
+<td>ID</td>
+<td>EX</td>
+<td>MEM</td>
+<td>WB</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ADD.D F10,F4,F6</td>
+<td></td>
+<td>STALL</td>
+<td>STALL</td>
+<td>STALL</td>
+<td>IF</td>
+<td>ID</td>
+<td>EX</td>
+<td>MEM</td>
+<td>WB</td>
+<td></td>
+</tr>
+<tr>
+<td>SUB.D F12,F6,F14</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>IF</td>
+<td>ID</td>
+<td>EX</td>
+<td>MEM</td>
+<td>WB</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>无序发射无序执行</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DIV.D F4,F0,F2</td>
+<td>IF</td>
+<td>ID</td>
+<td>EX</td>
+<td>MEM</td>
+<td>WB</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ADD.D F10,F4,F6</td>
+<td></td>
+<td>STALL</td>
+<td>STALL</td>
+<td>STALL</td>
+<td>IF</td>
+<td>ID</td>
+<td>EX</td>
+<td>MEM</td>
+<td>WB</td>
+<td></td>
+</tr>
+<tr>
+<td>SUB.D F12,F6,F14</td>
+<td></td>
+<td>IF</td>
+<td>ID</td>
+<td>EX</td>
+<td>MEM</td>
+<td>WB</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>在流水线的ID模块，需要检测结构冲突和数据冲突。</p>
+<p>只要检测到没有结构冲突就可以让指令流出，并且流出后的指令一但其操作数就绪就可以立即执行。</p>
+<p>乱序执行：</p>
+<ul>
+<li>指令的执行顺序与程序顺序不同</li>
+<li>指令的完成也是乱序完成的</li>
+</ul>
+<p>为了支持乱序执行，译码阶段再分为两个阶段</p>
+<ul>
+<li>流出（IS)：指令译码，检查是否存在结构冲突</li>
+<li>读操作数(RO)：等待数据冲突消失然后读操作数</li>
+</ul>
+<div class="note info">
+            <p>正常五级流水不会发生WAR和WAW冲突，但乱序执行使得它们可能发生</p><p>例如：</p><ol><li>DIV.D  F10,F0,F2</li><li>ADD.D  F10,F4,F6</li><li>SUB.D  F6,F8,F14</li></ol><p>1,2存在输出相关，2,3存在反相关</p><p>可以通过寄存器重命名来消除相关</p>
+          </div>
+
+<p>动态调度的流水线支持多条指令同时处于执行当中</p>
+<p>指令乱序完成带来的最大问题就是异常处理（中断）比较复杂</p>
+<ul>
+<li>动态调度的处理机要保持正确的异常行为</li>
+<li>即使保持了正确的异常行为，动态调度处理机仍可能发生不精确异常</li>
+<li>不精确异常：当指令i导致发生异常时，处理机的现场与严格按程序执行时指令i的现场不同<ul>
+<li>原因1：发生异常时流水线可能已经执行完按程序顺序是位于指令i之后的指令</li>
+<li>原因2：流水线可能还没完成按程序顺序是指令i之前的指令</li>
+</ul>
+</li>
+<li>精确异常：当指令i导致发生异常时，处理机的现场与严格按照程序执行时指令i的现场相同<ul>
+<li>需要设置一定数量的后院寄存器，把流水线中所有指令的执行结果和现场保存下来。成本较高</li>
+</ul>
+</li>
+</ul>
+<h3 id="记分牌动态调度算法"><a href="#记分牌动态调度算法" class="headerlink" title="记分牌动态调度算法"></a>记分牌动态调度算法</h3><h4 id="基本思想"><a href="#基本思想" class="headerlink" title="基本思想"></a>基本思想</h4><ul>
+<li>目标：在没有结构冲突时，尽可能早地执行没有数据冲突的指令，实现每个时钟周期执行一条指令</li>
+<li>要发挥指令乱序执行的好处，必须有多条指令同时处于执行阶段</li>
+<li>指令执行过程分为四段<ul>
+<li>流出：如果当前流出指令所需的功能部件空闲，并且所有其他正在执行的指令的目的寄存器与该指令的不同，记分牌就向功能部件流出该指令，并修改记分牌内部的记录表。解决了WAW冲突。</li>
+<li>读操作数：记分牌监测源操作数的可用性，如果数据可用，它就通知功能部件从寄存器中读出源操作数并开始执行。动态地解决了RAW冲突，并导致指令可能乱序开始执行。</li>
+<li>执行：取到操作数后，功能部件开始执行。当产生出结果后，就通知记分牌它已经完成执行。在浮点流水线中，这一段可能要占用多个时钟周期。</li>
+<li>写结果：记分牌一旦知道执行部件完成了执行，就检测是否存在WAR冲突。<ul>
+<li>如果不存在，或者原有的WAR冲突已消失，记分牌就通知功能部件把结果写入目的寄存器，并释放该指令使用的所有资源。</li>
+<li>若检测到WAR冲突，就不能写结果，这时前面某条指令(按顺序流出)还没有读操作数，某个源操作数寄存器与本指令的目的寄存器相同，这种情况下记分牌必须等待，直到冲突消失。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="记分牌中的信息"><a href="#记分牌中的信息" class="headerlink" title="记分牌中的信息"></a>记分牌中的信息</h4><ul>
+<li>指令状态表：记录正在执行的各条指令进入到了哪一段</li>
+<li>功能部件状态表：记录各个功能部件的状态。每个功能部件有一项，包含九个字段<ul>
+<li>Busy：忙标志，初始为no</li>
+<li>Op：该功能部件正在执行或将要执行的操作</li>
+<li>Fi：目的寄存器编号</li>
+<li>Fj，Fk：源寄存器编号</li>
+<li>Qj，Qk：指出向源寄存器Fj，Fk写数据的功能部件</li>
+<li>Rj，Rk：标志位，yes表示Fj，Fk中的操作数就绪且未被取走。否则置no</li>
+</ul>
+</li>
+<li>结果寄存器状态表Result：每个寄存器在该表中有一项，指出哪个功能部件把结果写入该寄存器<ul>
+<li>若正在运行的指令都不以它为目的寄存器，其相应项置no，否则为yes</li>
+<li>初值全为no</li>
+</ul>
+</li>
+</ul>
+<h4 id="例子："><a href="#例子：" class="headerlink" title="例子："></a>例子：</h4><p>起始记分牌信息：</p>
+<p>其中.D表示双精度浮点数，.S表示单精度浮点数。</p>
+<ul>
+<li>L.D： 从存储器中读取双精度浮点数到寄存器中</li>
+<li>S.D：把双精度数据从存储器存储到存储器中</li>
+<li>ADD.D：一个双精度浮点数加上一个单精度浮点数，结果是双精度浮点数</li>
+<li>SUB.D：一个双精度浮点数减去一个单精度浮点数，结果为双精度浮点数</li>
+<li>MULT.D：一个双精度浮点数乘以一个单精度浮点数，结果为双精度浮点数</li>
+<li>DIV.D：一个双精度浮点数除以一个单精度浮点数，结果为双精度浮点数</li>
+</ul>
+<p>假设加法需要2时钟周期，乘法需要4时钟周期，除法需要40时钟周期</p>
+<p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/Sq5toHszZDuxgTE.png" alt="指令级并行1.png"></p>
+<p>写后读相关：</p>
+<ul>
+<li>L.D指令到MULT.D和SUB.D之间，L.D先写F2，MULT.D和SUB.D后读F2</li>
+<li>MULT.D到DIV.D之间，MULT.D先写F0，DIV.D后读F0</li>
+<li>SUB.D到ADD.D之间，SUB.D先写F8，ADD.D后读F8</li>
+</ul>
+<p>读后写相关：</p>
+<ul>
+<li>DIV.D和ADD.D之间，DIV.D先读F6，ADD.D后写F6</li>
+<li>SUB.D和ADD.D之间，SUB.D先读F6，ADD.D后写F6</li>
+</ul>
+<p>结构相关：</p>
+<ul>
+<li>ADD.D和SUB.D指令关于浮点加法部件</li>
+</ul>
+<p>程序执行到MULT.D将要写结果时的记分牌：</p>
+<p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/6IjqEUzmPLH8pr7.png" alt="指令级并行2.png"></p>
+<p>程序执行到DIV.D将要写结果时的记分牌：</p>
+<p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/FRKVTCvIYQuXyL6.png" alt="指令级并行3.png"></p>
+<h4 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h4><p>约定：</p>
+<ul>
+<li>FU：表示当前指令所要用的功能部件</li>
+<li>D：目的寄存器的名称</li>
+<li>S1、S2：源操作数寄存器的名称</li>
+<li>Op：要进行的操作</li>
+<li>Fj[FU]：功能部件FU的Fj字段（其他字段依此类推）</li>
+<li>Result[D]：结果寄存器状态表中与寄存器D相对应的内容。其中存放的是将把结果写入寄存器D的功能部件的名称</li>
+</ul>
+<div class="note success">
+            <p>（1）指令流出</p><ul><li>进入条件：<ul><li>not Busy[FU] &amp; not Result[D]：功能部件空闲且没有写后写冲突</li></ul></li><li>记分牌内容修改：<ul><li>Busy[FU]←yes：当前指令使用部件置“忙”</li><li>Op[FU]←Op：记录当前指令操作码</li><li>Fi[FU]←D：记录目的寄存器编号</li><li>Fj[FU]←S1：记录第一个源寄存器编号</li><li>Fk[FU]←S2：记录第二个源寄存器编号</li><li>Qj[FU]←Result[S1]：记录将产生第一个源操作数的部件</li><li>Qk[FU]←Result[S2]：记录将产生第二个源操作数的部件</li><li>Rj[FU]←not Qj[FU]：记录第一个源操作数是否可用，若没有部件要写S1，则可用</li><li>Rk[FU]←not Qk[FU]：记录产生第二个源操作数是否可用</li><li>Result[D]←FU：功能部件FU把结果写入D</li></ul></li></ul><p>（2）读操作数</p><ul><li>进入条件：<ul><li>Rj[FU] &amp; Rk[FU]：两个源操作数都可用</li></ul></li><li>记分牌内容修改：<ul><li>Rj[FU]←no：第一个源操作数已读取</li><li>Rk[FU]←no：第二个源操作数已读取</li><li>Qj[FU]←0：第一个操作数不再使用部件FU</li><li>Qk[FU]←0：第二个操作数不再使用部件FU</li></ul></li></ul><p>（3）执行</p><ul><li>结束条件：<ul><li>功能部件操作结束</li></ul></li></ul><p>（4）写结果</p><ul><li>进入条件：<ul><li>对任意在忙的部件f应当有((Fj[f] != Fi[FU] or Rj[f] == no) &amp; (Fk[f] != Fi[FU] or Rk[f] == no))：对任意在忙的部件f（对应一条指令），它的源操作数寄存器Fj[f]不是当前指令要写入的目的寄存器或者它的源操作数暂时不可用，即不存在读后写冲突。</li></ul></li><li>记分牌内容修改：<ul><li>对任意在忙的部件f有if Qj[f] == FU then Rj[f]←yes：对任意在忙的部件f（对应一条指令），若它的第一源操作数需要使用当前指令的运算结果，则将其Rj[f]置yes表示第一源操作数可用</li><li>对任意在忙的部件f有if Qk[f] == FU then Rk[f]←yes：对任意在忙的部件f（对应一条指令），若它的第二源操作数需要使用当前指令的运算结果，则将其Rk[f]置yes表示第二源操作数可用</li><li>Result(Fi[FU])←0：释放当前指令目的寄存器</li><li>Busy[FU]←no：释放当前指令的功能部件</li></ul></li></ul>
+          </div>
+
+<h4 id="记分牌的性能受限于以下几个方面"><a href="#记分牌的性能受限于以下几个方面" class="headerlink" title="记分牌的性能受限于以下几个方面"></a>记分牌的性能受限于以下几个方面</h4><ul>
+<li>程序代码中可开发的并行性，及是否存在可以并行执行的不相关的指令</li>
+<li>记分牌的容量，记分牌的容量决定了流水线能在多大范围内寻找不相关指令。流水线中可以同时容纳的指令数量称为指令窗口</li>
+<li>功能部件的种类和数目，功能部件的总数决定了结构冲突的严重程度</li>
+<li>反相关和输出相关，它们引起记分牌中的WAR和WAW冲突</li>
+</ul>
+<h3 id="Tomasulo算法"><a href="#Tomasulo算法" class="headerlink" title="Tomasulo算法"></a>Tomasulo算法</h3><h4 id="基本思想-1"><a href="#基本思想-1" class="headerlink" title="基本思想"></a>基本思想</h4><ul>
+<li>记录和监测指令相关，操作数一但就绪就立即执行，吧发送RAW冲突的可能性减少到最小</li>
+<li>通过寄存器换名来消除WAR冲突和WAW冲突</li>
+</ul>
+<p>寄存器换名可以消除WAR和WAW冲突，例：</p>
+<ol>
+<li>DIV.D   F0,F2,F4</li>
+<li>ADD.D   F6,F0,F8</li>
+<li>S.D   F6,0(R1)</li>
+<li>SUB.D   F8,F10,F14</li>
+<li>MUL.D   F6,F10,F8</li>
+</ol>
+<p>其中2和5之间存在反相关可能导致WAR冲突，2和5之间存在输出相关可能导致WAR冲突，通过寄存器换名：</p>
+<ol>
+<li>DIV.D   F0,F2,F4</li>
+<li>ADD.D   S,F0,F8</li>
+<li>S.D   S,0(R1)</li>
+<li>SUB.D   T,F10,F14</li>
+<li>MUL.D   F6,F10,T</li>
+</ol>
+<p>消除了名相关</p>
+<p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/utzBomGISUlHAiV.png" alt="指令级并行4.png"></p>
+<h4 id="硬件说明"><a href="#硬件说明" class="headerlink" title="硬件说明"></a>硬件说明</h4><p>基于Tomasulo算法的MIPS处理器浮点部件的基本结构</p>
+<p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/oEhRepxSTcVgj5l.png" alt="指令级并行5.png"></p>
+<ul>
+<li>保留站：每个保留站存储一条已经流出并等待到本功能部件执行的指令（相关信息），包括操作码，操作数以及用于检测和解决冲突的信息<ul>
+<li>在一条指令流出到保留站的时候，如果该指令的源操作数已经在寄存器中就绪，则将之取到该保留站中</li>
+<li>如果操作数还没有计算出来，则在该保留站中记录将产生这个操作数的保留站的标识</li>
+<li>每个保留站具有唯一的标识字段，例如浮点加法器有三个保留站ADD1，ADD2，ADD3</li>
+</ul>
+</li>
+<li>公共数据总线CDB（一条重要的数据通路）<ul>
+<li>所有功能部件的计算结果都是送到CDB上，由它把这些结果直接送到（播送到）各个需要该结果的地方</li>
+<li>在具有多个执行部件且采用多流出（即每个时钟周期流出多条指令）的流水线中，需要采用多条CDB</li>
+</ul>
+</li>
+<li>load缓冲器和store缓冲器<ul>
+<li>存放读/写存储器的数据或地址</li>
+<li>load缓冲器作用<ul>
+<li>存放用于计算有效地址的分量</li>
+<li>记录正在进行的load访存，等待存储器的响应</li>
+<li>保存已经完成了的load的结果（即从存储器取来的数据），等待CDB传输</li>
+</ul>
+</li>
+<li>store缓冲器作用<ul>
+<li>存放用于计算有效地址的分量</li>
+<li>保存正在进行的store访存的目标地址，该store正在等待存储数据的到达</li>
+<li>保存该store的地址和数据，直到存储部件接收</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>浮点寄存器FP<ul>
+<li>共16个浮点寄存器：F0，F2，F4……F30</li>
+<li>它们通过一对总线连接到功能部件，并通过CDB连接到store缓冲器</li>
+</ul>
+</li>
+<li>指令队列<ul>
+<li>指令部件送来的指令放入指令队列</li>
+<li>指令队列中的指令按先进先出的顺序流出</li>
+</ul>
+</li>
+<li>运算部件<ul>
+<li>浮点加法器完成加法和减法操作</li>
+<li>浮点乘法器完成乘法和除法操作</li>
+</ul>
+</li>
+</ul>
+<p>在该算法中，寄存器换名是通过保留站和流出逻辑来共同完成的：</p>
+<ul>
+<li>当指令流出时，如果其操作数还没有计算出来，则将该指令中相应的寄存器号换名为将产生这个操作数的保留站的标识</li>
+<li>指令流出到保留站后，其操作数寄存器号或者换成了数据本身（如果该数据已经就绪），或者换成了保留站的标识，不再与寄存器有关系</li>
+</ul>
+<p>一个简单的流程：</p>
+<div class="justified-gallery"><p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/jUJluv4P8mo2C6s.png" alt="tomasulo1.png"></p><p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/Vmgvqhj3NbwGSzB.png" alt="tomasulo2.png"></p><p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/93ViE2JXrBSd1TR.png" alt="tomasulo3.png"></p><p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/behGi3RIrKjko6v.png" alt="tomasulo4.png"></p>
+          </div>
+
+<p>Tomasulo算法有以下两个特点：</p>
+<ul>
+<li>冲突检测和指令执行控制是分开的，每个功能部件的保留站中的信息决定了什么时候指令可以在该功能部件开始执行</li>
+<li>计算结果通过CDB直接从产生它的保留站传送到所有需要它的功能部件，而不用经过寄存器</li>
+</ul>
+<p>指令执行步骤：</p>
+<ul>
+<li>流出：从指令队列的头部取一条指令<ul>
+<li>如果该指令的操作所要求的保留站有空闲的，就把该指令送到该保留站（设为r）<ul>
+<li>如果其操作数在寄存器中已经就绪，就将这些操作数送入保留站r</li>
+<li>如果其操作数还没有就绪，就把将产生该操作数的保留站的标识送入保留站r</li>
+<li>一旦被记录的保留站完成计算，它将直接把数据送给保留站r</li>
+<li>（寄存器换名和对操作数进行缓冲，消除WAR冲突）</li>
+</ul>
+</li>
+<li>完成对目标寄存器的预约工作（消除了WAW冲突）</li>
+<li>如果没有空闲的保留站，指令就不能流出（发生了结构冲突）</li>
+</ul>
+</li>
+<li>执行<ul>
+<li>当两个操作数都就绪后，本保留站就用相应的功能部件开始执行指令规定的操作</li>
+<li>load和store指令的执行需要两个步骤<ul>
+<li>计算有效地址（要等到基地址寄存器就绪）</li>
+<li>把有效地址放入load或store缓冲器</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>写结果<ul>
+<li>功能部件计算完毕后，就将计算结果放到CDB上，所有等待该计算结果的寄存器和保留站（包括store缓冲器）都同时从CDB上获得所需要的数据</li>
+</ul>
+</li>
+</ul>
+<p>每个保留站有以下七个字段：</p>
+<ul>
+<li>Op：对源操作数进行的操作</li>
+<li>Qj，Qk：将产生源操作数的保留站号<ul>
+<li>等于0表示操作数已经就绪且在Vj或Vk中，或者不需要操作数</li>
+</ul>
+</li>
+<li>Vj，Vk：源操作数的值<ul>
+<li>对于每一个操作数来说，V或Q字段只有一个有效</li>
+<li>对于load来说，Vk字段用于保存偏移量</li>
+</ul>
+</li>
+<li>Busy：为yes表示本保留站或缓冲单元“忙”</li>
+<li>A：仅load和store缓冲器有该字段。开始是存放指令中的立即数字段，地址计算后存放有效地址</li>
+<li>Qi：寄存器状态表<ul>
+<li>每个寄存器在该表中有对应的一项，用于存放将把结果写入该寄存器的保留站的站号</li>
+<li>为0表示当前没有正在执行的指令要写入该寄存器，也即该寄存器中的内容就绪</li>
+</ul>
+</li>
+</ul>
+<p>Tomasulo算法的两个主要优点：</p>
+<ul>
+<li>冲突检测逻辑是分布的（通过保留站和CDB实现）<ul>
+<li>如果有多条指令已经获得了一个操作数，并同时在等待同一运算结果，那么这个结果一产生，就可以通过CDB同时播送给所有这些指令，使它们可以同时执行</li>
+</ul>
+</li>
+<li>消除了WAW冲突和WAR冲突导致的停顿<ul>
+<li>使用保留站进行寄存器换名，并且在操作数一旦就绪就将之放入保留站</li>
+</ul>
+</li>
+</ul>
+<h4 id="例子：-1"><a href="#例子：-1" class="headerlink" title="例子："></a>例子：</h4><ol>
+<li>L.D    F6,34(R2)</li>
+<li>L.D    F2,45(R3)</li>
+<li>MUL.D    F0,F2,F4</li>
+<li>SUB.D    F8,F2,F6</li>
+<li>DIV.D    F10,F0,F6</li>
+<li>ADD.D    F6,F8,F2</li>
+</ol>
+<p>当第一条指令执行完并写入结果时，Tomasulo算法所用的各信息表的内容：</p>
+<p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/s3R5xWnjbuLmz4J.png" alt="指令级并行6.png"></p>
+<p>假设上例各操作延迟为：</p>
+<ul>
+<li>load：1时钟周期</li>
+<li>加法：2时钟周期</li>
+<li>乘法：10时钟周期</li>
+<li>除法：40时钟周期</li>
+</ul>
+<p>则MUL.D指令准备写结果时各状态表的内容为：</p>
+<p><img src= "/amumu547426.github.io/img/loading.gif" data-src="https://i.loli.net/2020/07/11/dI7QahRcvEXVTmZ.png" alt="指令级并行7.png"></p>
+<h4 id="具体算法"><a href="#具体算法" class="headerlink" title="具体算法"></a>具体算法</h4><p>符号意义：</p>
+<ul>
+<li>r：分配给当前指令的保留站或者缓冲器单元编号</li>
+<li>rd：目标寄存器编号</li>
+<li>rs、rt：源操作数寄存器编号</li>
+<li>imm：符号扩展后的立即数</li>
+<li>RS：保留站</li>
+<li>result：浮点部件或load缓冲器返回的结果</li>
+<li>Qi：寄存器状态表</li>
+<li>Regs[ ]：寄存器组</li>
+<li>与rs对应的保留站字段：Vj，Qj</li>
+<li>与rt对应的保留站字段：Vk，Qk</li>
+<li>Qi、Qj、Qk的内容或者为0，或者是一个大于0的整数<ul>
+<li>Qi为0表示相应寄存器中的数据就绪</li>
+<li>Qj、Qk为0表示保留站或缓冲器单元中的Vj或Vk字段中的数据就绪</li>
+<li>当它们为正整数时，表示相应的寄存器、保留站或缓冲器单元正在等待结果</li>
+</ul>
+</li>
+</ul>
+<p>（1）指令流出</p>
+<ul>
+<li><p>浮点运算指令(MUL.D  F4,F0,F2：[rd:F4]，[rs:F0]，[rt:F2])</p>
+<ul>
+<li><p>进入条件：有空闲保留站，设为r</p>
+</li>
+<li><p>操作和状态表内容修改：</p>
+<ul>
+<li><pre><code class="伪码">//检测第一个操作数是否就绪
+if (Qi[rs] != 0){
+    //没有就绪，进行寄存器换名，即把将产生该操作数的保留站的编号存入当前缓冲器单元的Qj
+    RS[r].Qj = Qi[rs];
+}else{
+    //第一操作数就绪，把寄存器rs中的操作数取到当前缓冲器单元的Vj
+    RS[r].Vj = Regs[rs];
+    //置Qj为0，表示当前缓冲器单元的Vj中的操作数就绪
+    RS[r].Qj = 0;
+}
+//检测第二个操作数是否就绪，同第一
+if (Qi[rt] != 0){
+    RS[r].Qk = Qi[rt];
+}else{
+    RS[r].Vk = Regs[rt];
+    RS[r].Qk = 0;
+}
+//设置当前保留站为忙
+RS[r].Busy = yes;
+//设置操作码
+RS[r].Op = Op;
+//把当前保留站的编号r放入rd所对应的寄存器状态表项，以便rd将来接收结果
+Qi[rd] = r;
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">- load和store指令(L.D  F2,45(R3)：[rt:F2]，[imm:45]，[rs:R3])</span><br><span class="line"></span><br><span class="line">  - 进入条件：缓冲器有空闲单元，设为r</span><br><span class="line"></span><br><span class="line">  - 操作和状态表内容修改：</span><br><span class="line"></span><br><span class="line">    - &#96;&#96;&#96;伪码</span><br><span class="line">      &#x2F;&#x2F;检测第一个操作数是否就绪</span><br><span class="line">      if (Qi[rs] !&#x3D; 0)&#123;</span><br><span class="line">      	&#x2F;&#x2F;没有就绪，进行寄存器换名，即把将产生该操作数的保留站的编号存入当前缓冲器单元的Qj</span><br><span class="line">      	RS[r].Qj &#x3D; Qi[rs];</span><br><span class="line">      &#125;else&#123;</span><br><span class="line">      	&#x2F;&#x2F;第一操作数就绪，把寄存器rs中的操作数取到当前缓冲器单元的Vj</span><br><span class="line">      	RS[r].Vj &#x3D; Regs[rs];</span><br><span class="line">      	&#x2F;&#x2F;置Qj为0，表示当前缓冲器单元的Vj中的操作数就绪</span><br><span class="line">      	RS[r].Qj &#x3D; 0;</span><br><span class="line">      &#125;</span><br><span class="line">      &#x2F;&#x2F;设置当前保留站为忙</span><br><span class="line">      RS[r].Busy &#x3D; yes;</span><br><span class="line">      &#x2F;&#x2F;把符号位扩展后的偏移量放入当前缓冲器单元的A</span><br><span class="line">      RS[r].A &#x3D; imm;</span><br></pre></td></tr></table></figure></code></pre>
+</li>
+<li><p>对于load指令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;把当前缓冲器单元的编号r放入load指令的目标寄存器rt所对应的寄存器状态表项，以便rt将来接收所取的数据</span><br><span class="line">Qi[rt] &#x3D; r;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>对于store指令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;检测要存储的数据是否就绪</span><br><span class="line">if (Qi[rt] !&#x3D; 0)&#123;</span><br><span class="line">	&#x2F;&#x2F;该数据没有就绪，进行寄存器换名，即把将产生该操作数的保留站的编号存入当前缓冲器单元的Qk</span><br><span class="line">	RS[r].Qk &#x3D; Qi[rt];</span><br><span class="line">&#125;else&#123;</span><br><span class="line">	&#x2F;&#x2F;该数据就绪，把它从寄存器rt取到store缓冲单元的Vk</span><br><span class="line">	RS[r].Vk &#x3D; Regs[rt];</span><br><span class="line">	&#x2F;&#x2F;置Qk为0，表示当前缓冲器单元的Vk中的操作数就绪</span><br><span class="line">	RS[r].Qk &#x3D; 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>（2）执行</p>
+<ul>
+<li><p>浮点操作指令</p>
+<ul>
+<li>进入条件：RS[r].Qj == 0 &amp; RS[r].Qk == 0  //两个源操作数就绪</li>
+<li>操作和状态表内容修改：进行计算，产生结果</li>
+</ul>
+</li>
+<li><p>load和store指令</p>
+<ul>
+<li><p>进入条件：RS[r].Qj == 0 &amp; r为load/store缓冲队列头部</p>
+</li>
+<li><p>操作和状态表内容修改：</p>
+<ul>
+<li><p>RS[r].A = RS[r].Vj + RS[r].A   //计算有效地址  </p>
+<p>对于load指令，在完成有效地址的计算后，还要从存储器中读取数据Mem[RS[r].A]</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>（3）写结果</p>
+<ul>
+<li><p>浮点运算和load指令</p>
+<ul>
+<li><p>进入条件：保留站r执行结束且CDB就绪</p>
+</li>
+<li><p>操作和状态表内容修改：</p>
+<ul>
+<li><pre><code class="伪码">对任意正在等该结果的浮点寄存器x
+if(Qi[x] == r){
+    //向该寄存器写入结果
+    Regs[x] = result;
+    //把该寄存器的状态置为数据就绪
+    Qi[x] = 0;
+}
+对任意正在等该结果作为第一操作数的保留站x
+if(RS[x].Qj == r){
+    //向该保留站的Vj写入结果
+    RS[x].Vj = result;
+    //置Qj为0，表示该保留站的Vj中的操作数就绪 
+    RS[x].Qj = 0;
+}
+对任意正在等该结果作为第二操作数的保留站x
+if(RS[x].Qk == r){
+    //向该保留站的Vj写入结果
+    RS[x].Vk = result;
+    //置Qj为0，表示该保留站的Vj中的操作数就绪 
+    RS[x].Qk = 0;
+}
+//释放当前保留站，将之置为空闲状态
+RS[r].Busy = 0;
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">- store指令</span><br><span class="line"></span><br><span class="line">  - 进入条件：保留站r执行结束且RS[r].Qk &#x3D;&#x3D;  0   &#x2F;&#x2F;要存储的数据已经就绪</span><br><span class="line"></span><br><span class="line">  - 操作和状态表内容修改：</span><br><span class="line"></span><br><span class="line">    -</span><br></pre></td></tr></table></figure>
+//数据写入存储器，地址由store缓冲器单元的A字段给出
+Mem[RS[r].A] = RS[r].Vk;
+//释放当前缓冲器单元，将之置为空闲状态
+RS[r].Busy = no;</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>说明：</p>
+<ul>
+<li>当浮点运算指令流出到一个保留站r时，把该指令的目的寄存器rd的状态表项设置为r,方便将来接收运算结果</li>
+<li>load和store指令的处理与浮点运算指令不同。只要load缓冲器有空闲单元，就可以流出。STORE指令在写结果段执行</li>
+</ul>
+</div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/amumu547426.github.io/tags/%E6%8C%87%E4%BB%A4%E7%BA%A7%E5%B9%B6%E8%A1%8C%E5%BC%80%E5%8F%91%E6%96%B9%E6%B3%95-%E6%8C%87%E4%BB%A4%E5%8A%A8%E6%80%81%E8%B0%83%E5%BA%A6/">指令级并行开发方法 - 指令动态调度</a></div><div class="post_share"><div class="social-share" data-image="https://i.loli.net/2020/07/11/Ua2YfSWosN73qJV.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/amumu547426.github.io/2020/07/09/SE/"><img class="next-cover" data-src="https://i.loli.net/2020/07/09/B9dDU2ZJcnFQsye.jpg" onerror="onerror=null;src='/amumu547426.github.io/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">软件工程复习</div></div></a></div></nav><hr><div id="post-comment"><div class="comment_headling"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div><div class="vcomment" id="vcomment"></div><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var requestSetting = function (from,set) {
+  var from = from
+  var setting = set.split(',').filter(function(item){
+  return from.indexOf(item) > -1
+  });
+  setting = setting.length == 0 ? from :setting;
+  return setting
+}
+
+var guestInfo = requestSetting(['nick','mail','link'],'nick,mail,link')
+var requiredFields = requestSetting(['nick','mail'],'nick,mail')
+
+window.valine = new Valine({
+  el:'#vcomment',
+  appId: 'bBew5zit71oYgat9bmNjTI8Y-gzGzoHsz',
+  appKey: 'Mzi1bqj9diHLCiqQiXhOcHw6',
+  placeholder: 'Please leave your footprints',
+  avatar: 'monsterid',
+  meta: guestInfo,
+  pageSize: '10',
+  lang: 'zh-CN',
+  recordIP: false,
+  serverURLs: '',
+  emojiCDN: '',
+  emojiMaps: "",
+  enableQQ: true,
+  requiredFields: requiredFields
+});</script></div></article></main><footer id="footer" style="background-image: url(https://i.loli.net/2020/07/11/Ua2YfSWosN73qJV.jpg)" data-type="photo"><div id="footer-wrap"><div class="copyright">&copy;2020 By Haunting</div><div class="framework-info"><span>驱动 </span><a href="https://hexo.io" target="_blank" rel="noopener"><span>Hexo</span></a><span class="footer-separator">|</span><span>主题 </span><a href="https://github.com/jerryc127/hexo-theme-butterfly" target="_blank" rel="noopener"><span>Butterfly</span></a></div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><button id="readmode" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font_plus" title="放大字体"><i class="fas fa-plus"></i></button><button id="font_minus" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" title="设置"><i class="fas fa-cog"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fas fa-comments"></i></a><button class="close" id="mobile-toc-button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></section><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>由</span> <a href="https://github.com/wzpan/hexo-generator-search" target="_blank" rel="noopener" style="color:#49B1F5;">hexo-generator-search</a>
+ <span>提供支持</span></div></div></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div class="search-mask"></div><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/amumu547426.github.io/js/utils.js"></script><script src="/amumu547426.github.io/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script id="ribbon_piao" mobile="false" src="/amumu547426.github.io/js/third-party/piao.js"></script><script src="/amumu547426.github.io/js/third-party/activate-power-mode.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+document.body.addEventListener('input', POWERMODE);
+</script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module" defer></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload/dist/lazyload.iife.min.js" async></script><script src="/amumu547426.github.io/js/third-party/click_heart.js"></script><script src="/amumu547426.github.io/js/search/local-search.js"></script><script>var endLoading = function () {
+  document.body.style.overflow = 'auto';
+  document.getElementById('loading-box').classList.add("loaded")
+}
+window.addEventListener('load',endLoading)</script></body></html>
